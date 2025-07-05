@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 public class NewsResponse {
-
+//新闻列表
     @SerializedName("data")
     private List<NewsItem> data;
     private int pageSize;

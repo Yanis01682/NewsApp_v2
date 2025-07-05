@@ -2,7 +2,7 @@ package com.java.zhangzhiyuan.network;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-
+//创建url
 public class RetrofitClient {
 
     private static Retrofit retrofit = null;
