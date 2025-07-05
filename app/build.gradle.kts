@@ -15,6 +15,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -30,6 +31,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
         viewBinding = true
@@ -42,9 +44,13 @@ android {
 
     dependencies {
 
-        implementation("org.apache.commons:commons-beanutils:1.9.4")
-        implementation("org.apache.commons:commons-collections:3.2.1")
-        implementation("org.apache.commons:commons-logging:1.2")
+//        implementation("org.apache.commons:commons-beanutils:1.9.4")
+//        implementation("org.apache.commons:commons-collections:3.2.1")
+//        implementation("org.apache.commons:commons-logging:1.2")
+        implementation("commons-beanutils:commons-beanutils:1.9.4")
+        implementation("commons-collections:commons-collections:3.2.1") // 正确的坐标
+        implementation("commons-logging:commons-logging:1.2")          // 正确的坐标
+
 
         implementation("org.apache.httpcomponents:httpclient:4.5.13") // 升级版本
         implementation("org.apache.httpcomponents:httpcore:4.4.15")   // 升级版本
@@ -86,14 +92,7 @@ android {
         testImplementation("org.junit.jupiter:junit-jupiter")
 
         implementation("cn.bigmodel.openapi:oapi-java-sdk:release-V4-2.0.2")
-
-
-
-
-        implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
-
-
-
+        coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     }
 
 }

@@ -124,7 +124,7 @@ public class NewsDetailActivity extends AppCompatActivity {
             ModelApiResponse response = client.invokeModelApi(chatCompletionRequest);
 
             if (response.isSuccess() && response.getData() != null) {
-                return response.toString();
+                return response.getData().getChoices().get(0).getMessage().getContent().toString();
             } else {
                 Log.e(TAG, "API调用失败: " + response.getMsg());
                 return "摘要生成失败：" + response.getMsg();

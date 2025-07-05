@@ -6,7 +6,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import com.java.zhangzhiyuan.model.Summary;
 
-@Database(entities = {Summary.class}, version = 1)
+@Database(entities = {Summary.class}, version = 1, exportSchema = false) // <-- 在这里添加
 public abstract class AppDatabase extends RoomDatabase {
     public abstract SummaryDao summaryDao();
 

@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+
         google {
             content {
                 includeGroupByRegex("com\\.android.*")
@@ -8,11 +9,12 @@ pluginManagement {
             }
         }
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
         gradlePluginPortal()
-        maven { url = uri("https://jitpack.io")}
+        //maven { url = uri("https://jitpack.io")}
         //maven { url = uri("https://repo.spring.io/plugins-release/") }
-        maven { url = uri("https://repository.mulesoft.org/nexus/content/repositories/public/") }
-        maven { url = uri("https://dl.bintray.com/bilibili/maven/") }
+        //maven { url = uri("https://repository.mulesoft.org/nexus/content/repositories/public/") }
+       // maven { url = uri("https://dl.bintray.com/bilibili/maven/") }
 
 
 
@@ -21,12 +23,14 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+
         google()
         mavenCentral()
-        maven { url = uri("https://jitpack.io")}
+
+        //maven { url = uri("https://jitpack.io")}
         //maven { url = uri("https://repo.spring.io/plugins-release/") }
-        maven { url = uri("https://repository.mulesoft.org/nexus/content/repositories/public/") }
-        maven { url = uri("https://dl.bintray.com/bilibili/maven/") }
+        // { url = uri("https://repository.mulesoft.org/nexus/content/repositories/public/") }
+        //maven { url = uri("https://dl.bintray.com/bilibili/maven/") }
 
 
     }
