@@ -51,6 +51,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.9.0")
     // 用于加载和显示网络图片
     implementation("com.github.bumptech.glide:glide:4.12.0")
+    implementation(libs.swiperefreshlayout)
     annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
 
     testImplementation("junit:junit:4.13.2")

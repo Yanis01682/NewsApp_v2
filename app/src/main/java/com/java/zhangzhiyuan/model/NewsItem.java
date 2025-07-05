@@ -2,19 +2,26 @@ package com.java.zhangzhiyuan.model;
 
 import android.util.Log;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class NewsItem {
-    // 定义一个TAG，方便在Logcat中过滤日志
-    private static final String TAG = "NewsItem";
-    // Fields remain the same
+    private static final String TAG = "NewsItemParser";
+    // 【升级】定义一个要屏蔽的图片域名列表
+    private static final List<String> BLOCKED_DOMAINS = Arrays.asList(
+            "n.sinaimg.cn",         // 新浪的二维码域名
+            "imgpai.thepaper.cn"    // 新增：澎湃新闻的问题图片域名
+    );
+
     private String newsID;
     private String title;
     private String publisher;
     private String publishTime;
-    private String image; // This is the raw string from the server, e.g., "[url1,url2]"
+    private String image;
     private String content;
     private String video;
 
-    // --- Getters for other fields remain the same ---
+    // Getters
     public String getNewsID() { return newsID; }
     public String getTitle() { return title; }
     public String getPublisher() { return publisher; }
@@ -22,45 +29,48 @@ public class NewsItem {
     public String getContent() { return content; }
     public String getVideo() { return video; }
 
-
-    // ================== The Improved getImage() Method ==================
     /**
-     * This method processes the raw 'image' string from the server.
-     * It handles three cases:
-     * 1. No URL (e.g., "[]" or null) -> returns null.
-     * 2. A single URL (e.g., "[http://.../1.jpg]") -> returns "http://.../1.jpg".
-     * 3. Multiple URLs (e.g., "[http://.../1.jpg,http://.../2.jpg]") -> returns only the first URL.
-     * @return A single, clean image URL string, or null if no valid URL exists.
+     * 【黑名单版】解析、过滤并返回单个干净的图片URL。
+     * @return 一个干净的图片URL，或者在没有有效URL或URL被屏蔽时返回null。
      */
     public String getImage() {
-        Log.d(TAG, "未解析的url: " + image + "'");
-        // 1. Check if the raw string is null or too short to contain a URL
-        if (image == null || image.length() <= 2) {
-            return null;
-        }
+        String finalUrl = null;
+        String blockedByDomain = null; // 用于记录是被哪个域名屏蔽的
 
-        // 2. Remove the outer brackets "[]"
-        String contentInsideBrackets = image.substring(1, image.length() - 1);
-
-        // If content is now empty, there was no URL
-        if (contentInsideBrackets.isEmpty()){
-            return null;
-        }
-
-        // 3. Check if the content contains multiple URLs separated by a comma
-        if (contentInsideBrackets.contains(",")) {
-            // Split the string by the comma and return the first part.
-            // .trim() removes any accidental leading/trailing spaces.
-            String[] urls = contentInsideBrackets.split(",\\s*");
-            for (String url : urls) {
-                // 检查当前这段url是否不为null，并且去掉空格后也不是空字符串
-                if (url != null && !url.trim().isEmpty()) {
-                    // 找到了第一个有效的URL，立刻返回它！
-                    return url.trim();
+        // 步骤 1 & 2: 解析出原始URL
+        if (image != null && image.length() > 2) {
+            String contentInsideBrackets = image.substring(1, image.length() - 1).trim();
+            if (!contentInsideBrackets.isEmpty()) {
+                String[] urls = contentInsideBrackets.split(",");
+                for (String url : urls) {
+                    String trimmedUrl = url.trim();
+                    if (!trimmedUrl.isEmpty()) {
+                        finalUrl = trimmedUrl;
+                        break;
+                    }
                 }
             }
         }
-        return null;
+
+        // 步骤 3: 【核心过滤逻辑】检查URL是否在我们的黑名单中
+        if (finalUrl != null) {
+            for (String blockedDomain : BLOCKED_DOMAINS) {
+                if (finalUrl.contains(blockedDomain)) {
+                    blockedByDomain = blockedDomain; // 记录原因
+                    finalUrl = null; // 强制设为null
+                    break; // 找到一个匹配就跳出循环
+                }
+            }
+        }
+
+        // 步骤 4: 打印包含所有信息的最终日志
+        Log.d(TAG, "新闻标题: \"" + this.title + "\"");
+        Log.d(TAG, "  ├─ 原始Image字段: " + this.image);
+        if(blockedByDomain != null) {
+            Log.w(TAG, "  ├─ URL被屏蔽: 因为它包含了黑名单域名 -> " + blockedByDomain);
+        }
+        Log.d(TAG, "  └─ 最终解析URL: " + finalUrl);
+
+        return finalUrl;
     }
-    // ====================================================================
 }

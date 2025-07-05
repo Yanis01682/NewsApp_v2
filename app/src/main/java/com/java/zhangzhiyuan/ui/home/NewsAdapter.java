@@ -1,7 +1,6 @@
 package com.java.zhangzhiyuan.ui.home;
 
 import android.content.Context;
-import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,89 +8,66 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 import com.java.zhangzhiyuan.R;
 import com.java.zhangzhiyuan.model.NewsItem;
 
 import java.util.List;
 
-public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder> {
+public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    // private final Context context; // 不再需要这个全局context
     private final List<NewsItem> newsList;
-    private static final String TAG = "NewsAdapter"; // 定义日志TAG
+    private static final String TAG = "NewsAdapter";
+
+    // --- 新增：定义两种视图类型 ---
+    private static final int VIEW_TYPE_ITEM = 0;     // 普通新闻项
+    private static final int VIEW_TYPE_LOADING = 1;  // 底部加载项
 
     public NewsAdapter(Context context, List<NewsItem> newsList) {
-        // this.context = context;
         this.newsList = newsList;
     }
 
     @NonNull
     @Override
-    public NewsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // 直接使用parent的context，这是最佳实践
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_news, parent, false);
-        return new NewsViewHolder(view);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull NewsViewHolder holder, int position) {
-        NewsItem news = newsList.get(position);
-        holder.titleTextView.setText(news.getTitle());
-        holder.publisherTextView.setText(news.getPublisher() + " - " + news.getPublishTime());
-
-        String imageUrl = news.getImage();
-
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            // ==================== 这里是核心修改点 ====================
-            // 使用带有详细错误监听器的Glide调用
-
-            Glide.with(holder.itemView.getContext()) // 使用holder的context，更安全
-                    .load(imageUrl)
-                    .listener(new RequestListener<Drawable>() {
-                        @Override
-                        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                            // 图片加载失败时，这段代码会被执行
-                            Log.e(TAG, "Glide加载图片失败，URL: " + model);
-                            if (e != null) {
-                                // 打印完整的、详细的错误堆栈信息，这是我们破案的关键！
-                                Log.e(TAG, "GlideException详情: ", e);
-                            }
-                            // 必须返回false，Glide才会继续显示你设置的error占位图
-                            return false;
-                        }
-
-                        @Override
-                        public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                            // 图片加载成功时，这段代码会被执行（可选，用于调试）
-                            Log.d(TAG, "Glide成功加载图片: " + model);
-                            // 必须返回false，让Glide自己去把图片设置到ImageView上
-                            return false;
-                        }
-                    })
-                    .placeholder(R.drawable.ic_launcher_background) // 加载中的占位图
-                    .error(R.drawable.ic_launcher_foreground)       // 加载失败时显示的图（建议和加载中用不同的图，方便区分）
-                    .into(holder.imageView); // 你的ViewHolder里的ImageView
-            // ========================================================
-        } else {
-            // 如果没有图片URL，清理旧图或设置一个默认图
-            Glide.with(holder.itemView.getContext()).clear(holder.imageView); // 清理，防止复用出错
-            holder.imageView.setImageResource(R.drawable.ic_launcher_background);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        // 根据视图类型加载不同的布局
+        if (viewType == VIEW_TYPE_ITEM) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_news, parent, false);
+            return new NewsViewHolder(view);
+        } else { // viewType == VIEW_TYPE_LOADING
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_loading, parent, false);
+            return new LoadingViewHolder(view);
         }
     }
 
     @Override
-    public int getItemCount() {
-        return newsList.size();
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        // 根据 ViewHolder 的类型来绑定数据
+        if (holder instanceof NewsViewHolder) {
+            populateItemRows((NewsViewHolder) holder, position);
+        }
+        // LoadingViewHolder 不需要绑定任何数据，因为它只有一个ProgressBar
     }
 
+    /**
+     * 决定当前位置应该使用哪种视图类型
+     */
+    @Override
+    public int getItemViewType(int position) {
+        // 如果列表项是null，我们就认为它是加载项，否则是普通新闻项
+        return newsList.get(position) == null ? VIEW_TYPE_LOADING : VIEW_TYPE_ITEM;
+    }
+
+    @Override
+    public int getItemCount() {
+        return newsList == null ? 0 : newsList.size();
+    }
+
+    /**
+     * 普通新闻项的 ViewHolder
+     */
     static class NewsViewHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
         TextView titleTextView;
@@ -99,10 +75,40 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
 
         public NewsViewHolder(@NonNull View itemView) {
             super(itemView);
-            // 确保这里的ID和你的item_news.xml文件中的ID一致
             imageView = itemView.findViewById(R.id.news_image);
             titleTextView = itemView.findViewById(R.id.news_title);
             publisherTextView = itemView.findViewById(R.id.news_publisher);
+        }
+    }
+
+    /**
+     * 底部加载项的 ViewHolder
+     */
+    static class LoadingViewHolder extends RecyclerView.ViewHolder {
+        public LoadingViewHolder(@NonNull View itemView) {
+            super(itemView);
+            // 这里可以获取ProgressBar的引用，如果需要控制它的话
+        }
+    }
+
+    /**
+     * 填充普通新闻项数据的辅助方法
+     */
+    private void populateItemRows(NewsViewHolder holder, int position) {
+        NewsItem news = newsList.get(position);
+        holder.titleTextView.setText(news.getTitle());
+        holder.publisherTextView.setText(news.getPublisher() + " - " + news.getPublishTime());
+
+        String imageUrl = news.getImage();
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            holder.imageView.setVisibility(View.VISIBLE);
+            Glide.with(holder.itemView.getContext())
+                    .load(imageUrl)
+                    .placeholder(R.drawable.ic_launcher_background)
+                    .error(R.drawable.ic_launcher_foreground)
+                    .into(holder.imageView);
+        } else {
+            holder.imageView.setVisibility(View.GONE);
         }
     }
 }
