@@ -2,10 +2,12 @@ package com.java.zhangzhiyuan.model;
 
 import android.util.Log;
 
+import java.io.Serializable; // 1. 确保导入了这个包
 import java.util.Arrays;
 import java.util.List;
 
-public class NewsItem {
+// 2. 在类名后面添加 "implements Serializable"
+public class NewsItem implements Serializable {
     private static final String TAG = "NewsItemParser";
     // 【升级】定义一个要屏蔽的图片域名列表
     private static final List<String> BLOCKED_DOMAINS = Arrays.asList(
@@ -33,6 +35,17 @@ public class NewsItem {
      * 【黑名单版】解析、过滤并返回单个干净的图片URL。
      * @return 一个干净的图片URL，或者在没有有效URL或URL被屏蔽时返回null。
      */
+    // VVVVVV 在这里添加新方法 VVVVVV
+    /**
+     * 【新增方法】
+     * 返回未经处理的原始image字段字符串，用于详情页的图片画廊。
+     * @return 类似 "[url1,url2,url3]" 的原始字符串
+     */
+    public String getRawImageUrls() {
+        return this.image;
+    }
+    // ^^^^^^ 新方法添加结束 ^^^^^^
+
     public String getImage() {
         String finalUrl = null;
         String blockedByDomain = null; // 用于记录是被哪个域名屏蔽的
