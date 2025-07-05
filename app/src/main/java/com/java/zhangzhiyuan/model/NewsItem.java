@@ -1,19 +1,13 @@
 package com.java.zhangzhiyuan.model;
 
 import android.util.Log;
-
-import java.io.Serializable; // 1. 确保导入了这个包
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
-// 主页的新闻条目
 public class NewsItem implements Serializable {
     private static final String TAG = "NewsItemParser";
-    // 定义一个要屏蔽的图片域名列表
-    private static final List<String> BLOCKED_DOMAINS = Arrays.asList(
-            "n.sinaimg.cn",         // 新浪的二维码域名
-            "imgpai.thepaper.cn"    // 新增：澎湃新闻的问题图片域名
-    );
+    private static final List<String> BLOCKED_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn");
 
     private String newsID;
     private String title;
@@ -29,17 +23,10 @@ public class NewsItem implements Serializable {
     public String getPublisher() { return publisher; }
     public String getPublishTime() { return publishTime; }
     public String getContent() { return content; }
-    public String getVideo() { return video; }
+    public String getRawImageUrls() { return this.image; }
 
-    public String getRawImageUrls() {
-        return this.image;
-    }
-//获取有效的url链接
     public String getImage() {
         String finalUrl = null;
-        String blockedByDomain = null; // 用于记录是被哪个域名屏蔽的
-
-        // 步骤 1 & 2: 解析出原始URL
         if (image != null && image.length() > 2) {
             String contentInsideBrackets = image.substring(1, image.length() - 1).trim();
             if (!contentInsideBrackets.isEmpty()) {
@@ -53,26 +40,23 @@ public class NewsItem implements Serializable {
                 }
             }
         }
-
-        // 步骤 3: 【核心过滤逻辑】检查URL是否在我们的黑名单中
         if (finalUrl != null) {
             for (String blockedDomain : BLOCKED_DOMAINS) {
                 if (finalUrl.contains(blockedDomain)) {
-                    blockedByDomain = blockedDomain; // 记录原因
-                    finalUrl = null; // 强制设为null
-                    break; // 找到一个匹配就跳出循环
+                    finalUrl = null;
+                    break;
                 }
             }
         }
-
-        // 步骤 4: 打印包含所有信息的最终日志
-        Log.d(TAG, "新闻标题: \"" + this.title + "\"");
-        Log.d(TAG, "  ├─ 原始Image字段: " + this.image);
-        if(blockedByDomain != null) {
-            Log.w(TAG, "  ├─ URL被屏蔽: 因为它包含了黑名单域名 -> " + blockedByDomain);
-        }
-        Log.d(TAG, "  └─ 最终解析URL: " + finalUrl);
-
         return finalUrl;
+    }
+
+    // --- 【最终版本】直接返回原始URL，并添加日志 ---
+    public String getVideo() {
+        Log.d(TAG, "获取到的原始视频URL (Raw Video URL): " + this.video);
+        if (this.video == null || this.video.trim().isEmpty()) {
+            return null;
+        }
+        return this.video.trim();
     }
 }

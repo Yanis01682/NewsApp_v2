@@ -41,8 +41,13 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        // 【核心修正】根据holder的类型，分别进行处理
         if (holder instanceof NewsViewHolder) {
+            // 如果是新闻，就绑定新闻数据
             populateItemRows((NewsViewHolder) holder, position);
+        } else if (holder instanceof LoadingViewHolder) {
+            // 如果是加载中，不需要做任何事，因为布局里只有一个ProgressBar，它自己会转
+            // 这个分支虽然是空的，但它明确了处理逻辑，不可或缺
         }
     }
 

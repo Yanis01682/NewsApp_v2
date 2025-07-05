@@ -127,9 +127,11 @@ public class HomeFragment extends Fragment {
     private void fetchNews(final boolean isRefresh) {
         ApiService apiService = RetrofitClient.getApiService();
         String size = String.valueOf(PAGE_SIZE);
-        String startDate = "2024-06-20";
+        String startDate = "2020-06-20";
 
         Log.d(TAG, "    请求网络: page=" + currentPage + ", isRefresh=" + isRefresh);
+
+        //这一步是默认搜索！！！
         Call<NewsResponse> call = apiService.getNews(size, startDate, sessionEndDate, "", "", String.valueOf(currentPage));
 
         call.enqueue(new Callback<NewsResponse>() {
@@ -150,8 +152,9 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "    处理网络响应: isRefresh=" + isRefresh);
         // 首先，移除加载圈圈（如果是加载更多操作）
         if (!isRefresh && !newsList.isEmpty() && newsList.get(newsList.size() - 1) == null) {
-            newsList.remove(newsList.size() - 1);
-            newsAdapter.notifyItemRemoved(newsList.size());
+            int lastPosition = newsList.size() - 1; // 先记下被移除项的位置
+            newsList.remove(lastPosition);
+            newsAdapter.notifyItemRemoved(lastPosition); // 【核心修正】通知Adapter移除正确位置的项
         }
 
         if (response.isSuccessful() && response.body() != null) {

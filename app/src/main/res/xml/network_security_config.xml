@@ -1,13 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <base-config cleartextTrafficPermitted="false" />
-
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">finance.china.cn</domain>
-
-        <domain includeSubdomains="true">www.xinhuanet.com</domain>
-        <domain includeSubdomains="true">p1.ifengimg.com</domain>
-        <domain includeSubdomains="true">news.cnhubei.com</domain>
-        <!--如果出现图片不能预览，那就看日志，把它来源的网址添加到网络白名单 -->
-    </domain-config>
+    <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
