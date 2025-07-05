@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         // 1. 填充布局 (Inflate the Layout)
-        // 这行代码会读取你的XML布局文件(activity_main.xml)，并创建其中定义的所有视图对象，
+        // 这行代码会读取你的XML布局文件(activity_main.xml)(进去的主页)，并创建其中定义的所有视图对象，
         // 然后将这些对象的引用放入 'binding' 这个变量中，方便后续直接调用。
         binding = ActivityMainBinding.inflate(getLayoutInflater());
 
@@ -54,13 +54,7 @@ public class MainActivity extends AppCompatActivity {
         // 这是获取 NavController 最可靠的方式。
         NavController navController = navHostFragment.getNavController();
 
-        // 7. 连接顶部标题栏 (Action Bar)
-        // 这行代码将你的顶部标题栏与 NavController 连接起来。它会自动完成两件事：
-        //  - 根据当前页面的标签(label)，自动更改标题栏的文字。
-        //  - 当你从主页面进入更深的页面时，自动显示和处理“向上”返回箭头。
-        //NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-
-        // 8. 连接底部导航栏 (Bottom Navigation View)
+        // 7. 连接底部导航栏 (Bottom Navigation View)
         // 这是最后的连接。它将你的 BottomNavigationView (navView) 与 NavController 连接起来。
         // 当你点击底部导航栏的按钮时，这个设置会告诉 NavController 导航到对应的页面。
         NavigationUI.setupWithNavController(binding.navView, navController);

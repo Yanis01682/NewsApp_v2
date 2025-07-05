@@ -31,11 +31,13 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeFragment extends Fragment {
-
+//构建home的布局
     private FragmentHomeBinding binding;
     private RecyclerView recyclerView;
     private NewsAdapter newsAdapter;
+    //新闻列表
     private List<NewsItem> newsList;
+    //下拉和上拉
     private SwipeRefreshLayout swipeRefreshLayout;
 
     private static final String TAG = "HomeFragment";
@@ -69,7 +71,7 @@ public class HomeFragment extends Fragment {
         newsAdapter = new NewsAdapter(getContext(), newsList);
         recyclerView.setAdapter(newsAdapter);
     }
-
+    //上拉
     private void setupListeners() {
         swipeRefreshLayout.setOnRefreshListener(this::startRefresh);
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -91,7 +93,7 @@ public class HomeFragment extends Fragment {
             }
         });
     }
-
+//下拉
     private void startRefresh() {
         if (isLoading) {
             swipeRefreshLayout.setRefreshing(false);
@@ -121,7 +123,7 @@ public class HomeFragment extends Fragment {
         // 步骤2：延迟一小段时间（给UI足够的时间去绘制圈圈），然后再去请求网络
         uiHandler.postDelayed(() -> fetchNews(false), 300); // 延迟300毫秒
     }
-
+//重新获取新闻
     private void fetchNews(final boolean isRefresh) {
         ApiService apiService = RetrofitClient.getApiService();
         String size = String.valueOf(PAGE_SIZE);

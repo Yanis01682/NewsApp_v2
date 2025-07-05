@@ -95,13 +95,6 @@
                 android:textSize="16sp"
                 tools:text="这里是新闻摘要..."/>
 
-            <TextView
-                android:id="@+id/news_detail_content"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:textSize="18sp"
-                tools:text="这里是新闻的详细内容..." />
 
         </LinearLayout>
     </ScrollView>

@@ -8,6 +8,7 @@ import com.java.zhangzhiyuan.model.Summary;
 
 @Dao
 public interface SummaryDao {
+    //存储以newsid作为唯一识别符
     @Query("SELECT * FROM summaries WHERE newsId = :newsId")
     Summary getSummaryById(String newsId);
 

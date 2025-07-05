@@ -22,7 +22,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final List<NewsItem> newsList;
     private static final int VIEW_TYPE_ITEM = 0;
     private static final int VIEW_TYPE_LOADING = 1;
-
+//构造函数
     public NewsAdapter(Context context, List<NewsItem> newsList) {
         this.newsList = newsList;
     }
@@ -76,7 +76,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     /**
-     * 填充普通新闻项数据的辅助方法（已修正，不再重复）
+     * 填充普通新闻项数据的辅助方法
      */
     private void populateItemRows(NewsViewHolder holder, int position) {
         NewsItem news = newsList.get(position);

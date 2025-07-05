@@ -1,5 +1,5 @@
 package com.java.zhangzhiyuan.ui.detail;
-
+//新闻详情页
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,39 +19,41 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zhipu.oapi.ClientV4;
+import com.zhipu.oapi.Constants;
+import com.zhipu.oapi.service.v4.model.ChatCompletionRequest;
+import com.zhipu.oapi.service.v4.model.ChatMessage;
+import com.zhipu.oapi.service.v4.model.ChatMessageRole;
+import com.zhipu.oapi.service.v4.model.ModelApiResponse;
 import com.java.zhangzhiyuan.R;
 import com.java.zhangzhiyuan.db.AppDatabase;
 import com.java.zhangzhiyuan.model.NewsItem;
 import com.java.zhangzhiyuan.model.Summary;
-import com.java.zhangzhiyuan.model.glm.GlmRequest;
-import com.java.zhangzhiyuan.model.glm.GlmResponse;
-import com.java.zhangzhiyuan.model.glm.Message;
-import com.java.zhangzhiyuan.network.ApiService;
-import com.java.zhangzhiyuan.network.RetrofitClient;
-import com.java.zhangzhiyuan.util.JwtTokenGenerator;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import retrofit2.Response;
-
 public class NewsDetailActivity extends AppCompatActivity {
 
     private static final String TAG = "NewsDetailActivity";
-    private TextView titleTextView, sourceTextView, timeTextView, contentTextView, summaryTextView;
+    private static final String API_KEY = "805c28b7b77747a88617bfb68e53aca8.FJK3H1Frt1nhGVvR"; // 替换为你的API Key
+    private static final String requestIdTemplate = "thu-%d";
+    private static final ClientV4 client = new ClientV4.Builder(API_KEY).build();
+    private TextView titleTextView, sourceTextView, timeTextView, summaryTextView;
     private VideoView videoView;
     private Toolbar toolbar;
     private ViewPager2 imageSliderPager;
     private LinearLayout indicatorContainer;
 
+    //实现摘要的本地存储
     private AppDatabase db;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+    //构建详情界面
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,10 +72,10 @@ public class NewsDetailActivity extends AppCompatActivity {
             loadSummary(newsItem.getNewsID(), newsItem.getContent());
         }
     }
-
+//如果本地数据库有摘要，加载，没有再调用API
     private void loadSummary(final String newsId, final String newsContent) {
         summaryTextView.setText("摘要生成中，请稍候...");
-        contentTextView.setVisibility(View.GONE); // 隐藏原文
+        //contentTextView.setVisibility(View.GONE); // 隐藏原文
 
         executorService.execute(() -> {
             Summary summary = db.summaryDao().getSummaryById(newsId);
@@ -97,58 +99,68 @@ public class NewsDetailActivity extends AppCompatActivity {
             }
         });
     }
-
+    //调用API生成摘要
     private String fetchSummaryFromGlmApi(String content) {
-        String apiKey = JwtTokenGenerator.API_KEY;
-        if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY_ID.YOUR_API_KEY_SECRET")) {
-            return "摘要生成失败：请在 JwtTokenGenerator.java 中配置你的API Key。";
-        }
+        String apiKey = "805c28b7b77747a88617bfb68e53aca8.FJK3H1Frt1nhGVvR";
 
-        String token = JwtTokenGenerator.generateToken(apiKey, 3600);
+        ClientV4 client = new ClientV4.Builder(apiKey).build();
 
-        ApiService apiService = RetrofitClient.getApiService();
-        String url = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
 
-        List<Message> messages = new ArrayList<>();
-        messages.add(new Message("user", "请为以下新闻内容生成一段100到150字左右的摘要，请直接返回摘要内容，不要包含“好的”、“当然”等多余的词语：\n\n" + content));
-        GlmRequest request = new GlmRequest("glm-3-turbo", messages);
+        List<ChatMessage> messages = new ArrayList<>();
+        ChatMessage chatMessage = new ChatMessage(ChatMessageRole.USER.value(),
+                "请为以下新闻内容生成一段100到150字左右的摘要，请直接返回摘要内容，不要包含“好的”、“当然”等多余的词语：\n\n" + content);
+        //这是你向大模型输入的话
+        messages.add(chatMessage);
+        String requestId = String.format(requestIdTemplate, System.currentTimeMillis());
 
+        ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
+                .model(Constants.ModelChatGLM4)
+                .stream(Boolean.FALSE)
+                .invokeMethod(Constants.invokeMethod)
+                .messages(messages)
+                .requestId(requestId)
+                .build();
         try {
-            Response<GlmResponse> response = apiService.getChatCompletion(url, "Bearer " + token, request).execute();
+            ModelApiResponse response = client.invokeModelApi(chatCompletionRequest);
 
-            if (response.isSuccessful() && response.body() != null) {
-                return response.body().getSummary();
+            if (response.isSuccess() && response.getData() != null) {
+                return response.toString();
             } else {
-                String errorBody = response.errorBody() != null ? response.errorBody().string() : "未知错误";
-                Log.e(TAG, "API请求失败: " + response.code() + " - " + errorBody);
-                return "摘要生成失败：" + response.code();
+                Log.e(TAG, "API调用失败: " + response.getMsg());
+                return "摘要生成失败：" + response.getMsg();
             }
-        } catch (IOException e) {
-            Log.e(TAG, "网络异常", e);
-            return "摘要生成失败：网络异常";
+        } catch (Exception e) {
+            Log.e(TAG, "调用API发生异常", e);
+            return "摘要生成失败：发生异常";
         }
     }
 
-    private void setupToolbar() {
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("新闻详情");
-        }
-    }
-
+    //
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         titleTextView = findViewById(R.id.news_detail_title);
         sourceTextView = findViewById(R.id.news_detail_source);
         timeTextView = findViewById(R.id.news_detail_time);
-        contentTextView = findViewById(R.id.news_detail_content);
         videoView = findViewById(R.id.news_detail_video);
         summaryTextView = findViewById(R.id.news_detail_summary);
         indicatorContainer = findViewById(R.id.image_slider_indicator_container);
         imageSliderPager = findViewById(R.id.image_slider_pager);
     }
 
+    private void setupToolbar() {
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+    }
+
+    private void populateViews(NewsItem newsItem) {
+        titleTextView.setText(newsItem.getTitle());
+        sourceTextView.setText(newsItem.getPublisher());
+        timeTextView.setText(newsItem.getPublishTime());
+        //contentTextView.setText(newsItem.getContent());
+    }
     private void handleImageGallery(NewsItem newsItem) {
         String rawImageUrls = newsItem.getRawImageUrls();
         if (rawImageUrls != null && rawImageUrls.startsWith("[") && rawImageUrls.endsWith("]")) {
@@ -213,13 +225,7 @@ public class NewsDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void populateViews(NewsItem newsItem) {
-        titleTextView.setText(newsItem.getTitle());
-        sourceTextView.setText(newsItem.getPublisher());
-        timeTextView.setText(newsItem.getPublishTime());
-        contentTextView.setText(newsItem.getContent());
-    }
-
+//处理视频逻辑
     private void handleVideo(NewsItem newsItem) {
         String videoUrl = newsItem.getVideo();
         if (videoUrl != null && !videoUrl.trim().isEmpty()) {

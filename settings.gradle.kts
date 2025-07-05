@@ -9,6 +9,13 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
+        maven { url = uri("https://jitpack.io")}
+        //maven { url = uri("https://repo.spring.io/plugins-release/") }
+        maven { url = uri("https://repository.mulesoft.org/nexus/content/repositories/public/") }
+        maven { url = uri("https://dl.bintray.com/bilibili/maven/") }
+
+
+
     }
 }
 dependencyResolutionManagement {
@@ -16,6 +23,12 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io")}
+        //maven { url = uri("https://repo.spring.io/plugins-release/") }
+        maven { url = uri("https://repository.mulesoft.org/nexus/content/repositories/public/") }
+        maven { url = uri("https://dl.bintray.com/bilibili/maven/") }
+
+
     }
 }
 
