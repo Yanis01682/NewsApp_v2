@@ -1,6 +1,10 @@
 package com.java.zhangzhiyuan.model;
 
+import android.util.Log;
+
 public class NewsItem {
+    // 定义一个TAG，方便在Logcat中过滤日志
+    private static final String TAG = "NewsItem";
     // Fields remain the same
     private String newsID;
     private String title;
@@ -29,6 +33,7 @@ public class NewsItem {
      * @return A single, clean image URL string, or null if no valid URL exists.
      */
     public String getImage() {
+        Log.d(TAG, "未解析的url: " + image + "'");
         // 1. Check if the raw string is null or too short to contain a URL
         if (image == null || image.length() <= 2) {
             return null;
@@ -46,13 +51,16 @@ public class NewsItem {
         if (contentInsideBrackets.contains(",")) {
             // Split the string by the comma and return the first part.
             // .trim() removes any accidental leading/trailing spaces.
-            String[] urls = contentInsideBrackets.split(",");
-            //将所有url打包成string[]数组
-            return urls[0].trim();
-        } else {
-            // 4. If no comma, it's a single URL. Return it.
-            return contentInsideBrackets;
+            String[] urls = contentInsideBrackets.split(",\\s*");
+            for (String url : urls) {
+                // 检查当前这段url是否不为null，并且去掉空格后也不是空字符串
+                if (url != null && !url.trim().isEmpty()) {
+                    // 找到了第一个有效的URL，立刻返回它！
+                    return url.trim();
+                }
+            }
         }
+        return null;
     }
     // ====================================================================
 }

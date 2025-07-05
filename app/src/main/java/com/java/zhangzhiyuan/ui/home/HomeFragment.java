@@ -34,6 +34,7 @@ public class HomeFragment extends Fragment {
     private NewsAdapter newsAdapter;
     // 这是最终要显示在界面上的列表
     private List<NewsItem> newsList;
+    // 定义一个TAG，方便在Logcat中过滤日志
     private static final String TAG = "HomeFragment";
 
     // --- 新增的成员变量，用于控制循环加载 ---
@@ -108,8 +109,15 @@ public class HomeFragment extends Fragment {
 
                         // 过滤并添加新闻，直到列表满15条
                         for (NewsItem item : fetchedNews) {
-                            if (newsList.size() < TARGET_NEWS_COUNT && item.getImage() != null) {
+                            if (newsList.size() < TARGET_NEWS_COUNT && item.getImage() != null ) {
                                 newsList.add(item);
+                                Log.d(TAG, "新闻标题: " + item.getTitle() + " | 原始Image字段: '" + item.getImage() + "'");
+                                Log.d(TAG, "    └── [过滤] - 有效的图片URL");
+                            }
+                            //用于调试，看看为什么出现空图片
+                            else {
+                                Log.d(TAG, "新闻标题: " + item.getTitle() + " | 原始Image字段: '" + item.getImage() + "'");
+                                Log.d(TAG, "    └── [过滤] - 无效或空的图片URL");
                             }
                         }
 

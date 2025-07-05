@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">finance.china.cn</domain>
+
+        <domain includeSubdomains="true">www.xinhuanet.com</domain>
+        <domain includeSubdomains="true">p1.ifengimg.com</domain>
+
+
+    </domain-config>
+</network-security-config>
