@@ -74,7 +74,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (news == null) return;
 
         holder.titleTextView.setText(news.getTitle());
-        holder.publisherTextView.setText(String.format("%s - %s", news.getPublisher(), news.getPublishTime()));
+        holder.publisherTextView.setText(String.format("%s %s", news.getPublisher(), news.getPublishTime()));
 
         if (viewedNewsIds.contains(news.getNewsID())) {
             holder.titleTextView.setTextColor(Color.GRAY);
@@ -87,8 +87,8 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             holder.imageView.setVisibility(View.VISIBLE);
             Glide.with(context)
                     .load(imageUrl)
-                    .placeholder(R.drawable.placeholder_image_background) // 核心修正：使用新的稳定占位图
-                    .error(R.drawable.ic_baseline_broken_image_24)
+                    .placeholder(R.drawable.placeholder_image_background)
+                    .error(R.drawable.placeholder_image_background)
                     .into(holder.imageView);
         } else {
             holder.imageView.setVisibility(View.GONE);
@@ -107,6 +107,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         TextView publisherTextView;
         public NewsViewHolder(@NonNull View itemView) {
             super(itemView);
+            // 确保ID与item_news.xml中的ID完全一致
             imageView = itemView.findViewById(R.id.news_image);
             titleTextView = itemView.findViewById(R.id.news_title);
             publisherTextView = itemView.findViewById(R.id.news_publisher);

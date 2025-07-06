@@ -1,5 +1,6 @@
 package com.java.zhangzhiyuan.ui.home;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -99,6 +100,17 @@ public class HomeFragment extends Fragment {
         newsList = new ArrayList<>();
         newsAdapter = new NewsAdapter(getContext(), newsList);
         recyclerView.setAdapter(newsAdapter);
+
+        // Bug 2: 彻底移除SearchView的下划线
+        try {
+            int searchPlateId = searchView.getContext().getResources().getIdentifier("android:id/search_plate", null, null);
+            View searchPlate = searchView.findViewById(searchPlateId);
+            if (searchPlate != null) {
+                searchPlate.setBackgroundColor(Color.TRANSPARENT);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupListeners() {
@@ -133,7 +145,6 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    // 核心修正：补全这个缺失的方法
     private void showAdvancedSearchDialog() {
         new AdvancedSearchDialogFragment().show(getParentFragmentManager(), "SEARCH_DIALOG");
     }
@@ -202,7 +213,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void handleResponse(Response<NewsResponse> response, boolean isRefresh) {
-        if (binding == null) return; // 防闪退
+        if (binding == null) return;
         if (!isRefresh && !newsList.isEmpty() && newsList.get(newsList.size() - 1) == null) {
             newsList.remove(newsList.size() - 1);
             newsAdapter.notifyItemRemoved(newsList.size());
@@ -228,7 +239,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void handleFailure(Throwable t, boolean isRefresh) {
-        if (binding == null) return; // 防闪退
+        if (binding == null) return;
         if (!isRefresh && !newsList.isEmpty() && newsList.get(newsList.size() - 1) == null) {
             newsList.remove(newsList.size() - 1);
             newsAdapter.notifyItemRemoved(newsList.size());

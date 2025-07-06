@@ -42,6 +42,11 @@ public class MyFragment extends Fragment {
             intent.putExtra(NewsListActivity.EXTRA_TYPE, NewsListActivity.TYPE_FAVORITES);
             startActivity(intent);
         });
+        binding.layoutNotes.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), NewsListActivity.class);
+            intent.putExtra(NewsListActivity.EXTRA_TYPE, NewsListActivity.TYPE_NOTES);
+            startActivity(intent);
+        });
     }
 
     @Override

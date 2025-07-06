@@ -43,8 +43,7 @@ public class NewsItem implements Serializable {
         if (finalUrl != null) {
             for (String blockedDomain : BLOCKED_DOMAINS) {
                 if (finalUrl.contains(blockedDomain)) {
-                    finalUrl = null;
-                    break;
+                    return null; // 直接返回null
                 }
             }
         }

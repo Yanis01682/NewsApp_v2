@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="?android:attr/selectableItemBackground">
+
+    <TextView
+        android:id="@+id/note_news_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="新闻标题"
+        android:textSize="18sp"
+        android:textColor="@android:color/black"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- 确保这个TextView的ID是 note_news_source_time -->
+    <TextView
+        android:id="@+id/note_news_source_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="来源 2025-07-06"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"/>
+
+    <TextView
+        android:id="@+id/note_preview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="这里是笔记预览..."
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/note_update_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="8dp"
+        android:text="更新于: 2025-07-06"
+        android:textSize="12sp" />
+
+</LinearLayout>

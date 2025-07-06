@@ -5,13 +5,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.gson.Gson;
 import com.java.zhangzhiyuan.R;
 import com.java.zhangzhiyuan.adapter.NewsAdapter;
+import com.java.zhangzhiyuan.adapter.NoteAdapter; // 导入
 import com.java.zhangzhiyuan.db.AppDatabase;
 import com.java.zhangzhiyuan.model.FavoriteRecord;
 import com.java.zhangzhiyuan.model.HistoryRecord;
 import com.java.zhangzhiyuan.model.NewsItem;
+import com.java.zhangzhiyuan.model.NoteRecord; // 导入
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -23,10 +27,10 @@ public class NewsListActivity extends AppCompatActivity {
     public static final String EXTRA_TYPE = "list_type";
     public static final String TYPE_HISTORY = "history";
     public static final String TYPE_FAVORITES = "favorites";
+    public static final String TYPE_NOTES = "notes"; // 新增
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private NewsAdapter adapter;
-    private List<NewsItem> newsList = new ArrayList<>();
+    private RecyclerView recyclerView;
     private final Gson gson = new Gson();
 
     @Override
@@ -41,22 +45,32 @@ public class NewsListActivity extends AppCompatActivity {
         }
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        RecyclerView recyclerView = findViewById(R.id.rv_news_list);
+        recyclerView = findViewById(R.id.rv_news_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new NewsAdapter(this, newsList);
-        recyclerView.setAdapter(adapter);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         String type = getIntent().getStringExtra(EXTRA_TYPE);
-        if (type != null && type.equals(TYPE_HISTORY)) {
-            if (getSupportActionBar() != null) getSupportActionBar().setTitle("历史记录");
-            loadHistory();
-        } else {
-            if (getSupportActionBar() != null) getSupportActionBar().setTitle("我的收藏");
-            loadFavorites();
+        if (type == null) {
+            finish();
+            return;
+        }
+
+        switch (type) {
+            case TYPE_HISTORY:
+                if (getSupportActionBar() != null) getSupportActionBar().setTitle("历史记录");
+                loadHistory();
+                break;
+            case TYPE_FAVORITES:
+                if (getSupportActionBar() != null) getSupportActionBar().setTitle("我的收藏");
+                loadFavorites();
+                break;
+            case TYPE_NOTES: // 新增
+                if (getSupportActionBar() != null) getSupportActionBar().setTitle("我的笔记");
+                loadNotes();
+                break;
         }
     }
 
@@ -69,10 +83,9 @@ public class NewsListActivity extends AppCompatActivity {
                     .collect(Collectors.toList());
 
             runOnUiThread(() -> {
-                newsList.clear();
-                newsList.addAll(items);
+                NewsAdapter adapter = new NewsAdapter(this, items);
                 adapter.setViewedNewsIds(viewedIds);
-                adapter.notifyDataSetChanged();
+                recyclerView.setAdapter(adapter);
             });
         });
     }
@@ -87,10 +100,20 @@ public class NewsListActivity extends AppCompatActivity {
                     .collect(Collectors.toList());
 
             runOnUiThread(() -> {
-                newsList.clear();
-                newsList.addAll(items);
+                NewsAdapter adapter = new NewsAdapter(this, items);
                 adapter.setViewedNewsIds(viewedIds);
-                adapter.notifyDataSetChanged();
+                recyclerView.setAdapter(adapter);
+            });
+        });
+    }
+
+    // 新增方法
+    private void loadNotes() {
+        executorService.execute(() -> {
+            List<NoteRecord> records = AppDatabase.getDatabase(this).noteDao().getAll();
+            runOnUiThread(() -> {
+                NoteAdapter adapter = new NoteAdapter(this, records);
+                recyclerView.setAdapter(adapter);
             });
         });
     }

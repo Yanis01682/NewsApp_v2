@@ -16,20 +16,20 @@
         android:maxLines="3"
         android:ellipsize="end" />
 
-    <TextView
-        android:id="@+id/news_publisher"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="来源 - 2025-07-04"
-        android:textSize="12sp" />
-
     <ImageView
         android:id="@+id/news_image"
         android:layout_width="match_parent"
         android:layout_height="200dp"
         android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:scaleType="centerCrop"
         android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/news_publisher"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="来源 2025-07-04"
+        android:textSize="12sp" />
 
 </LinearLayout>

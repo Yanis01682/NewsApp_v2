@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:fitsSystemWindows="true"
     tools:context=".ui.detail.NewsDetailActivity">
 
@@ -12,13 +11,17 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
+        android:layout_alignParentTop="true"
         android:background="@android:color/white"
-        app:titleTextColor="@color/black"
-        app:theme="@style/ThemeOverlay.AppCompat.Light"/>
+        app:theme="@style/ThemeOverlay.AppCompat.Light"
+        app:titleTextColor="@color/black" />
 
     <ScrollView
+        android:id="@+id/news_scroll_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_above="@+id/note_container"
+        android:layout_below="@id/toolbar">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -26,27 +29,28 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- 所有视图都在这里，确保它们存在 -->
             <TextView
                 android:id="@+id/news_detail_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:textSize="22sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/black"
                 tools:text="新闻标题" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
 
                 <TextView
                     android:id="@+id/news_detail_source"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="14sp"
                     android:textColor="@android:color/darker_gray"
+                    android:textSize="14sp"
                     tools:text="来源" />
 
                 <TextView
@@ -54,8 +58,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:textSize="14sp"
                     android:textColor="@android:color/darker_gray"
+                    android:textSize="14sp"
                     tools:text="时间" />
             </LinearLayout>
 
@@ -65,17 +69,17 @@
                 android:layout_height="240dp"
                 android:layout_marginTop="16dp"
                 android:visibility="gone"
-                tools:visibility="visible"/>
+                tools:visibility="visible" />
 
             <LinearLayout
                 android:id="@+id/image_slider_indicator_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
                 android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:orientation="horizontal"
                 android:visibility="gone"
-                tools:visibility="visible"/>
+                tools:visibility="visible" />
 
             <androidx.media3.ui.PlayerView
                 android:id="@+id/player_view"
@@ -88,42 +92,74 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="新闻摘要 (GLM):"
                 android:layout_marginTop="16dp"
-                android:textStyle="bold"/>
+                android:text="新闻摘要 (GLM):"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/news_detail_summary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:textSize="16sp"
                 android:textColor="@android:color/black"
-                tools:text="这里是新闻摘要..."/>
+                android:textSize="16sp"
+                tools:text="这里是新闻摘要..." />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#E0E0E0"
                 android:layout_marginTop="24dp"
-                android:layout_marginBottom="16dp"/>
+                android:layout_marginBottom="16dp"
+                android:background="#E0E0E0" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="新闻原文:"
-                android:textStyle="bold"/>
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/news_detail_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:textSize="16sp"
                 android:lineSpacingExtra="4dp"
                 android:textColor="@android:color/black"
-                tools:text="这里是新闻原文..."/>
+                android:textSize="16sp"
+                tools:text="这里是新闻原文..." />
 
         </LinearLayout>
     </ScrollView>
-</LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/note_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="?android:attr/windowBackground"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <EditText
+            android:id="@+id/et_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:gravity="top"
+            android:hint="在此输入你的笔记..."
+            android:minHeight="120dp"
+            android:padding="16dp" />
+
+        <Button
+            android:id="@+id/btn_save_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:text="保存笔记" />
+    </LinearLayout>
+
+</RelativeLayout>
