@@ -31,6 +31,7 @@ public class CategoryFragment extends Fragment {
     private CategoryPagerAdapter pagerAdapter;
     private List<Category> myCategories;
     private CategoryRepository categoryRepository;
+    private TabLayoutMediator tabLayoutMediator; // 将Mediator提升为成员变量，方便管理
 
     private final ActivityResultLauncher<Intent> categoryManagementLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -53,7 +54,7 @@ public class CategoryFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_category, container, false);
         initViews(view);
         loadCategories();
-        setupViewPager();
+        setupViewPagerAndTabs();
         setupListeners();
         return view;
     }
@@ -68,14 +69,30 @@ public class CategoryFragment extends Fragment {
         myCategories = categoryRepository.getMyCategories();
     }
 
-    private void setupViewPager() {
+    private void setupViewPagerAndTabs() {
+        // 在Fragment中使用ViewPager2，应使用getChildFragmentManager()和getLifecycle()
         pagerAdapter = new CategoryPagerAdapter(getChildFragmentManager(), getLifecycle(), myCategories);
         viewPager.setAdapter(pagerAdapter);
 
-        new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
-            tab.setText(myCategories.get(position).getName());
-        }).attach();
+        // --- 核心修正：将TabLayoutMediator的创建和附加逻辑也封装起来 ---
+        attachTabs();
     }
+
+    private void attachTabs() {
+        // 如果已存在一个Mediator，先将其分离，防止内存泄漏和重复附加
+        if (tabLayoutMediator != null) {
+            tabLayoutMediator.detach();
+        }
+
+        // 创建新的Mediator实例，并将TabLayout与ViewPager2关联起来
+        tabLayoutMediator = new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
+            if (position >= 0 && position < myCategories.size()) {
+                tab.setText(myCategories.get(position).getName());
+            }
+        });
+        tabLayoutMediator.attach();
+    }
+
 
     private void setupListeners() {
         ivCategoryManage.setOnClickListener(v -> {
@@ -84,20 +101,29 @@ public class CategoryFragment extends Fragment {
         });
     }
 
+    /**
+     * --- 核心修正：这是最关键的修改 ---
+     * 刷新分类和UI的完整逻辑
+     */
     private void reloadCategoriesAndRefreshUI() {
-        // 记录当前选中的tab位置
+        // 记录当前选中的tab位置，以便刷新后恢复
         int currentPosition = tabLayout.getSelectedTabPosition();
 
-        // 重新从仓库加载分类
-        myCategories.clear();
-        myCategories.addAll(categoryRepository.getMyCategories());
+        // 1. 从仓库重新加载最新的分类列表
+        loadCategories();
 
-        // 通知Adapter数据已更新
-        pagerAdapter.notifyDataSetChanged();
+        // 2. 创建一个全新的适配器实例
+        pagerAdapter = new CategoryPagerAdapter(getChildFragmentManager(), getLifecycle(), myCategories);
 
-        // 尝试恢复之前的选中位置
+        // 3. 将新适配器设置给ViewPager
+        viewPager.setAdapter(pagerAdapter);
+
+        // 4. 【关键步骤】重新附加TabLayout，以根据新数据刷新顶部的标签
+        attachTabs();
+
+        // 5. 尝试恢复之前的选中位置
         if (currentPosition >= 0 && currentPosition < myCategories.size()) {
-            viewPager.setCurrentItem(currentPosition, false); // false表示不要平滑滚动
+            viewPager.setCurrentItem(currentPosition, false);
         }
     }
 }

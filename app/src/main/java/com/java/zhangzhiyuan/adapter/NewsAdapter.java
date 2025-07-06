@@ -3,14 +3,20 @@ package com.java.zhangzhiyuan.adapter;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.java.zhangzhiyuan.R;
 import com.java.zhangzhiyuan.model.NewsItem;
 import com.java.zhangzhiyuan.ui.detail.NewsDetailActivity;
@@ -84,15 +90,31 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         String imageUrl = news.getImage();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            // 先确保ImageView是可见的，以便Glide可以测量它
             holder.imageView.setVisibility(View.VISIBLE);
             Glide.with(context)
                     .load(imageUrl)
-                    .placeholder(R.drawable.placeholder_image_background)
-                    .error(R.drawable.placeholder_image_background)
+                    .listener(new RequestListener<Drawable>() {
+                        @Override
+                        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                            // --- 核心修正：加载失败时，隐藏ImageView ---
+                            holder.imageView.setVisibility(View.GONE);
+                            return false; // 返回false，让Glide处理错误占位符（如果你设置了的话）
+                        }
+
+                        @Override
+                        public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                            // 图片加载成功，确保ImageView是可见的
+                            holder.imageView.setVisibility(View.VISIBLE);
+                            return false; // 返回false，让Glide继续将图片设置到Target中
+                        }
+                    })
                     .into(holder.imageView);
         } else {
+            // 如果没有图片URL，直接隐藏
             holder.imageView.setVisibility(View.GONE);
         }
+
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, NewsDetailActivity.class);

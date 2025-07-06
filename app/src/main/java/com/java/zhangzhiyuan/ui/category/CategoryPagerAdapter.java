@@ -30,4 +30,31 @@ public class CategoryPagerAdapter extends FragmentStateAdapter {
     public int getItemCount() {
         return categories.size();
     }
+
+    /**
+     * --- 核心修正：重写getItemId和containsItem来保证Fragment的正确刷新 ---
+     *
+     * 返回列表中指定位置的项的唯一标识符。
+     * 我们使用 Category 对象的 hashCode 作为其唯一 ID。
+     * 这要求 Category 类必须正确实现 hashCode() 方法。
+     *
+     */
+    @Override
+    public long getItemId(int position) {
+        return categories.get(position).hashCode();
+    }
+
+    /**
+     * 检查适配器的数据集中是否包含具有给定 ID 的项。
+     * 当数据集发生变化时，ViewPager2 会调用此方法来确定某个 Fragment 是否仍然有效。
+     */
+    @Override
+    public boolean containsItem(long itemId) {
+        for (Category category : categories) {
+            if (category.hashCode() == itemId) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
