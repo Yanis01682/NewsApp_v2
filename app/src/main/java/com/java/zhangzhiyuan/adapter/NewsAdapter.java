@@ -1,7 +1,8 @@
-package com.java.zhangzhiyuan.ui.home;
+package com.java.zhangzhiyuan.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,22 +10,30 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
 import com.java.zhangzhiyuan.R;
 import com.java.zhangzhiyuan.model.NewsItem;
 import com.java.zhangzhiyuan.ui.detail.NewsDetailActivity;
-
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
+    private final Context context;
     private final List<NewsItem> newsList;
+    private Set<String> viewedNewsIds = new HashSet<>();
+
     private static final int VIEW_TYPE_ITEM = 0;
     private static final int VIEW_TYPE_LOADING = 1;
-//构造函数
+
     public NewsAdapter(Context context, List<NewsItem> newsList) {
+        this.context = context;
         this.newsList = newsList;
+    }
+
+    public void setViewedNewsIds(Set<String> viewedNewsIds) {
+        this.viewedNewsIds = viewedNewsIds;
     }
 
     @NonNull
@@ -41,19 +50,18 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        // 【核心修正】根据holder的类型，分别进行处理
         if (holder instanceof NewsViewHolder) {
-            // 如果是新闻，就绑定新闻数据
             populateItemRows((NewsViewHolder) holder, position);
-        } else if (holder instanceof LoadingViewHolder) {
-            // 如果是加载中，不需要做任何事，因为布局里只有一个ProgressBar，它自己会转
-            // 这个分支虽然是空的，但它明确了处理逻辑，不可或缺
         }
     }
 
     @Override
     public int getItemViewType(int position) {
-        return newsList.get(position) == null ? VIEW_TYPE_LOADING : VIEW_TYPE_ITEM;
+        if (position >= 0 && position < newsList.size() && newsList.get(position) != null) {
+            return VIEW_TYPE_ITEM;
+        } else {
+            return VIEW_TYPE_LOADING;
+        }
     }
 
     @Override
@@ -61,11 +69,42 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return newsList == null ? 0 : newsList.size();
     }
 
+    private void populateItemRows(NewsViewHolder holder, int position) {
+        NewsItem news = newsList.get(position);
+        if (news == null) return;
+
+        holder.titleTextView.setText(news.getTitle());
+        holder.publisherTextView.setText(String.format("%s - %s", news.getPublisher(), news.getPublishTime()));
+
+        if (viewedNewsIds.contains(news.getNewsID())) {
+            holder.titleTextView.setTextColor(Color.GRAY);
+        } else {
+            holder.titleTextView.setTextColor(Color.BLACK);
+        }
+
+        String imageUrl = news.getImage();
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            holder.imageView.setVisibility(View.VISIBLE);
+            Glide.with(context)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.placeholder_image_background) // 核心修正：使用新的稳定占位图
+                    .error(R.drawable.ic_baseline_broken_image_24)
+                    .into(holder.imageView);
+        } else {
+            holder.imageView.setVisibility(View.GONE);
+        }
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, NewsDetailActivity.class);
+            intent.putExtra("news_item", news);
+            context.startActivity(intent);
+        });
+    }
+
     static class NewsViewHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
         TextView titleTextView;
         TextView publisherTextView;
-
         public NewsViewHolder(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.news_image);
@@ -78,38 +117,5 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         public LoadingViewHolder(@NonNull View itemView) {
             super(itemView);
         }
-    }
-
-    /**
-     * 填充普通新闻项数据的辅助方法
-     */
-    private void populateItemRows(NewsViewHolder holder, int position) {
-        NewsItem news = newsList.get(position);
-        if (news == null) return;
-
-        // 1. 绑定数据到视图
-        holder.titleTextView.setText(news.getTitle());
-        holder.publisherTextView.setText(news.getPublisher() + " - " + news.getPublishTime());
-
-        String imageUrl = news.getImage();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            holder.imageView.setVisibility(View.VISIBLE);
-            Glide.with(holder.itemView.getContext())
-                    .load(imageUrl)
-                    .placeholder(R.drawable.ic_launcher_background)
-                    .error(R.drawable.ic_launcher_foreground)
-                    .into(holder.imageView);
-        } else {
-            holder.imageView.setVisibility(View.GONE);
-        }
-
-        // 2. 设置点击监听器，跳转到详情页
-        holder.itemView.setOnClickListener(v -> {
-            Context context = holder.itemView.getContext();
-            Intent intent = new Intent(context, NewsDetailActivity.class);
-            // 将新闻对象传递给下一个Activity
-            intent.putExtra("news_item", news);
-            context.startActivity(intent);
-        });
     }
 }

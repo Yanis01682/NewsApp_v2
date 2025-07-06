@@ -1,16 +1,16 @@
-package com.java.zhangzhiyuan.ui.dashboard;
+package com.java.zhangzhiyuan.ui.my;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-public class DashboardViewModel extends ViewModel {
+public class MyViewModel extends ViewModel {
 
     private final MutableLiveData<String> mText;
 
-    public DashboardViewModel() {
+    public MyViewModel() {
         mText = new MutableLiveData<>();
-        mText.setValue("这里是新闻分类页面");
+        mText.setValue("我的页面");
     }
 
     public LiveData<String> getText() {

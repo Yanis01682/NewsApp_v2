@@ -5,15 +5,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:fitsSystemWindows="true"
     tools:context=".ui.detail.NewsDetailActivity">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        app:titleTextColor="@color/white"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"/>
+        android:background="@android:color/white"
+        app:titleTextColor="@color/black"
+        app:theme="@style/ThemeOverlay.AppCompat.Light"/>
 
     <ScrollView
         android:layout_width="match_parent"
@@ -31,6 +32,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="22sp"
                 android:textStyle="bold"
+                android:textColor="@android:color/black"
                 tools:text="新闻标题" />
 
             <LinearLayout
@@ -44,6 +46,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="14sp"
+                    android:textColor="@android:color/darker_gray"
                     tools:text="来源" />
 
                 <TextView
@@ -52,6 +55,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:textSize="14sp"
+                    android:textColor="@android:color/darker_gray"
                     tools:text="时间" />
             </LinearLayout>
 
@@ -66,12 +70,12 @@
             <LinearLayout
                 android:id="@+id/image_slider_indicator_container"
                 android:layout_width="match_parent"
-                android:layout_height="8dp"
+                android:layout_height="wrap_content"
                 android:orientation="horizontal"
+                android:gravity="center"
                 android:layout_marginTop="8dp"
                 android:visibility="gone"
                 tools:visibility="visible"/>
-
 
             <androidx.media3.ui.PlayerView
                 android:id="@+id/player_view"
@@ -94,8 +98,31 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:textSize="16sp"
+                android:textColor="@android:color/black"
                 tools:text="这里是新闻摘要..."/>
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E0E0E0"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="新闻原文:"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/news_detail_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textSize="16sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@android:color/black"
+                tools:text="这里是新闻原文..."/>
 
         </LinearLayout>
     </ScrollView>

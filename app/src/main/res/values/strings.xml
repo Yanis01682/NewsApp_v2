@@ -1,6 +1,8 @@
 <resources>
-    <string name="app_name">zhangzhiyuan</string>
+    <string name="app_name">SkyNews</string>
     <string name="title_home">首页</string>
-    <string name="title_dashboard">新闻分类</string>
+    <string name="title_category">新闻分类</string>
     <string name="title_notifications">我的</string>
+
+    <string name="title_dashboard">旧版分类</string>
 </resources>
