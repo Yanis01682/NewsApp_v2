@@ -19,6 +19,17 @@ import java.util.List;
 public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.SliderViewHolder> {
 
     private final List<String> imageUrls;
+    private OnAllImagesFailedListener allImagesFailedListener;
+    private int failedImageCount = 0;
+
+    // 1. 定义回调接口
+    public interface OnAllImagesFailedListener {
+        void onAllImagesFailed();
+    }
+
+    public void setOnAllImagesFailedListener(OnAllImagesFailedListener listener) {
+        this.allImagesFailedListener = listener;
+    }
 
     public ImageSliderAdapter(List<String> imageUrls) {
         this.imageUrls = imageUrls;
@@ -40,13 +51,14 @@ public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.
                 .listener(new RequestListener<Drawable>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                        // 核心修正：当图片加载失败时，将此项的视图彻底折叠，使其不占据任何空间
-                        holder.itemView.setVisibility(View.GONE);
-                        ViewGroup.LayoutParams params = holder.itemView.getLayoutParams();
-                        params.height = 0;
-                        params.width = 0;
-                        holder.itemView.setLayoutParams(params);
-                        return true;
+                        // 2. 追踪失败数量
+                        failedImageCount++;
+                        // 3. 检查是否所有图片都已失败
+                        if (failedImageCount == getItemCount() && allImagesFailedListener != null) {
+                            allImagesFailedListener.onAllImagesFailed();
+                        }
+                        // 返回 false 让 Glide 自己处理占位符等
+                        return false;
                     }
 
                     @Override

@@ -91,6 +91,12 @@ public class NewsDetailActivity extends AppCompatActivity {
             populateViews(newsItem);
             handleImageGallery(newsItem);
             this.currentVideoUrl = newsItem.getVideo();
+
+
+//            用于调试，测试播放器能否正常播放
+//            if (this.currentVideoUrl != null && !this.currentVideoUrl.isEmpty()) {
+//                this.currentVideoUrl = "http://vjs.zencdn.net/v/oceans.mp4";
+//            }
             loadSummary(newsItem.getNewsID(), newsItem.getContent());
             recordHistory(newsItem);
             checkIfFavorited(newsItem.getNewsID());
@@ -98,7 +104,7 @@ public class NewsDetailActivity extends AppCompatActivity {
         }
     }
 
-    // ... (onCreateOptionsMenu, onOptionsItemSelected, etc. remain the same)
+    // ... (other methods like onCreateOptionsMenu, etc. remain unchanged)
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_news_detail, menu);
@@ -182,12 +188,10 @@ public class NewsDetailActivity extends AppCompatActivity {
     }
 
 
-    // 核心修正：此方法确保在没有任何有效图片时不显示图片区域
     private void handleImageGallery(NewsItem newsItem) {
         String rawImageUrls = newsItem.getRawImageUrls();
         List<String> cleanedImageUrls = new ArrayList<>();
 
-        // 1. 解析并过滤URL
         if (rawImageUrls != null && rawImageUrls.startsWith("[") && rawImageUrls.endsWith("]")) {
             String urlsInsideBrackets = rawImageUrls.substring(1, rawImageUrls.length() - 1);
             if (!urlsInsideBrackets.trim().isEmpty()) {
@@ -209,12 +213,21 @@ public class NewsDetailActivity extends AppCompatActivity {
             }
         }
 
-        // 2. 根据过滤后的列表决定是否显示图片区域
         if (!cleanedImageUrls.isEmpty()) {
-            // 如果列表不为空，才进行设置和显示
             ImageSliderAdapter adapter = new ImageSliderAdapter(cleanedImageUrls);
+
+            // 4. 实现回调接口
+            adapter.setOnAllImagesFailedListener(() -> {
+                // 确保在主线程执行UI操作
+                runOnUiThread(() -> {
+                    binding.imageSliderPager.setVisibility(View.GONE);
+                    binding.imageSliderIndicatorContainer.setVisibility(View.GONE);
+                });
+            });
+
             binding.imageSliderPager.setAdapter(adapter);
             binding.imageSliderPager.setVisibility(View.VISIBLE);
+
             if (cleanedImageUrls.size() > 1) {
                 binding.imageSliderIndicatorContainer.setVisibility(View.VISIBLE);
                 createIndicators(cleanedImageUrls.size());
@@ -227,13 +240,12 @@ public class NewsDetailActivity extends AppCompatActivity {
                 binding.imageSliderIndicatorContainer.setVisibility(View.GONE);
             }
         } else {
-            // 如果列表为空（因为所有URL都被屏蔽或原本就无图），则彻底隐藏图片区域
             binding.imageSliderPager.setVisibility(View.GONE);
             binding.imageSliderIndicatorContainer.setVisibility(View.GONE);
         }
     }
 
-    // ... (rest of the file remains the same, including player logic, db operations, etc.)
+    // ... (rest of the file remains the same)
     private void recordHistory(NewsItem newsItem) {
         executorService.execute(() -> {
             String newsItemJson = gson.toJson(newsItem);
