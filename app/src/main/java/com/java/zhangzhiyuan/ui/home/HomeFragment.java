@@ -52,7 +52,7 @@ public class HomeFragment extends Fragment {
 
     private String currentWords = "";
     private String currentCategory = "";
-    private String currentStartDate = "2018-01-01";
+    private String currentStartDate = "2006-01-01";
     private String currentEndDate = "";
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
@@ -64,7 +64,7 @@ public class HomeFragment extends Fragment {
             currentCategory = bundle.getString(AdvancedSearchDialogFragment.KEY_CATEGORY, "");
             currentStartDate = bundle.getString(AdvancedSearchDialogFragment.KEY_START_DATE, "2018-01-01");
             if (currentStartDate == null || currentStartDate.isEmpty()) {
-                currentStartDate = "2018-01-01";
+                currentStartDate = "2006-01-01";
             }
             currentEndDate = bundle.getString(AdvancedSearchDialogFragment.KEY_END_DATE, "");
 
@@ -84,10 +84,22 @@ public class HomeFragment extends Fragment {
         return root;
     }
 
+//    @Override
+//    public void onResume() {
+//        super.onResume();
+//        loadViewedNews();
+//    }
     @Override
     public void onResume() {
         super.onResume();
-        loadViewedNews();
+        // 核心修改：在 onResume 时检查新闻列表是否为空。
+        // 如果为空，说明数据可能在后台被回收，或者首次加载失败，此时需要重新加载。
+        if (newsList == null || newsList.isEmpty()) {
+            startRefresh();
+        } else {
+            // 如果列表有数据，只更新已读状态，避免不必要的网络请求。
+            loadViewedNews();
+        }
     }
 
     private void setupUI() {
@@ -138,7 +150,7 @@ public class HomeFragment extends Fragment {
         btnBackToHome.setOnClickListener(v -> {
             currentWords = "";
             currentCategory = "";
-            currentStartDate = "2018-01-01";
+            currentStartDate = "2006-01-01";
             currentEndDate = "";
             updateSearchUI();
             startRefresh();

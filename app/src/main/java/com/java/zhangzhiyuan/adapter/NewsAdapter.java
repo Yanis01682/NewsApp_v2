@@ -54,10 +54,23 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+//    @Override
+//    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+//        if (holder instanceof NewsViewHolder) {
+//            populateItemRows((NewsViewHolder) holder, position);
+//        }
+//    }
+
+    //新的！！！
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof NewsViewHolder) {
             populateItemRows((NewsViewHolder) holder, position);
+            NewsItem news = newsList.get(position);
+            if (news != null) {
+                // 在此处调用logDetails方法
+                news.logDetails("NewsAdapter");
+            }
         }
     }
 

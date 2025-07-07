@@ -66,7 +66,7 @@ public class NewsDetailActivity extends AppCompatActivity {
 
     private AppDatabase db;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private static final List<String> BLOCKED_IMAGE_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn");
+    private static final List<String> BLOCKED_IMAGE_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn");
 
     private boolean isFavorited = false;
     private NewsItem currentNewsItem;
@@ -213,12 +213,21 @@ public class NewsDetailActivity extends AppCompatActivity {
             }
         }
 
-        if (!cleanedImageUrls.isEmpty()) {
-            ImageSliderAdapter adapter = new ImageSliderAdapter(cleanedImageUrls);
+        // --- 【核心修改】在这里去除重复的URL，同时保持顺序 ---
+        List<String> uniqueImageUrls = new ArrayList<>();
+        for (String imageUrl : cleanedImageUrls) {
+            if (!uniqueImageUrls.contains(imageUrl)) {
+                uniqueImageUrls.add(imageUrl);
+            }
+        }
+        // --- 修改结束 ---
 
-            // 4. 实现回调接口
+
+        // 使用去重后的 uniqueImageUrls 列表进行后续操作
+        if (!uniqueImageUrls.isEmpty()) {
+            ImageSliderAdapter adapter = new ImageSliderAdapter(uniqueImageUrls);
+
             adapter.setOnAllImagesFailedListener(() -> {
-                // 确保在主线程执行UI操作
                 runOnUiThread(() -> {
                     binding.imageSliderPager.setVisibility(View.GONE);
                     binding.imageSliderIndicatorContainer.setVisibility(View.GONE);
@@ -228,9 +237,9 @@ public class NewsDetailActivity extends AppCompatActivity {
             binding.imageSliderPager.setAdapter(adapter);
             binding.imageSliderPager.setVisibility(View.VISIBLE);
 
-            if (cleanedImageUrls.size() > 1) {
+            if (uniqueImageUrls.size() > 1) {
                 binding.imageSliderIndicatorContainer.setVisibility(View.VISIBLE);
-                createIndicators(cleanedImageUrls.size());
+                createIndicators(uniqueImageUrls.size());
                 binding.imageSliderPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
                     @Override
                     public void onPageSelected(int position) { super.onPageSelected(position); updateIndicatorState(position); }

@@ -134,7 +134,7 @@ public class CategoryNewsListFragment extends Fragment {
         String page = String.valueOf(currentPage);
         // 核心修正：确保endDate总是当前时间
         String endDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-        String startDate = "2018-01-01";
+        String startDate = "2006-01-01";;
 
         Call<NewsResponse> call = apiService.getNews(size, startDate, endDate, "", categoryValue, page);
         call.enqueue(new Callback<NewsResponse>() {
