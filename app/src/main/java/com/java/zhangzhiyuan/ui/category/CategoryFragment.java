@@ -82,6 +82,12 @@ public class CategoryFragment extends Fragment {
         viewPager.setAdapter(pagerAdapter);
 
         // --- 核心修正：将TabLayoutMediator的创建和附加逻辑也封装起来 ---
+        // vvv--- 在这里添加核心修复代码 ---vvv
+        // 设置页面缓存数量。我们把它设置成一个稍大的值（比如10），
+        // 这样在您滑动分类时，绝大部分页面都会被保留在内存中，不会被销毁和重建。
+        viewPager.setOffscreenPageLimit(10);
+        // ^^^--- 添加结束 ---^^^
+
         attachTabs();
     }
 

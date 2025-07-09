@@ -14,6 +14,17 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import android.graphics.Point;
+import android.view.Display;
+import androidx.annotation.Nullable;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -40,10 +51,7 @@ import com.java.zhangzhiyuan.model.ZhipuResponse;
 import com.java.zhangzhiyuan.network.RetrofitClient;
 import com.java.zhangzhiyuan.util.JwtTokenGenerator;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -193,67 +201,149 @@ public class NewsDetailActivity extends AppCompatActivity {
         String rawImageUrls = newsItem.getRawImageUrls();
         List<String> cleanedImageUrls = new ArrayList<>();
 
+        // 1. 清理和去重图片URL（这部分逻辑保留）
         if (rawImageUrls != null && rawImageUrls.startsWith("[") && rawImageUrls.endsWith("]")) {
             String urlsInsideBrackets = rawImageUrls.substring(1, rawImageUrls.length() - 1);
             if (!urlsInsideBrackets.trim().isEmpty()) {
                 String[] urlArray = urlsInsideBrackets.split(",");
                 for (String url : urlArray) {
                     String trimmedUrl = url.trim();
-                    if (trimmedUrl.isEmpty()) continue;
-                    boolean isBlocked = false;
-                    for (String blockedDomain : BLOCKED_IMAGE_DOMAINS) {
-                        if (trimmedUrl.contains(blockedDomain)) {
-                            isBlocked = true;
-                            break;
-                        }
-                    }
-                    if (!isBlocked) {
+                    if (!trimmedUrl.isEmpty() && !cleanedImageUrls.contains(trimmedUrl)) {
                         cleanedImageUrls.add(trimmedUrl);
                     }
                 }
             }
         }
 
-        // --- 【核心修改】在这里去除重复的URL，同时保持顺序 ---
-        List<String> uniqueImageUrls = new ArrayList<>();
-        for (String imageUrl : cleanedImageUrls) {
-            if (!uniqueImageUrls.contains(imageUrl)) {
-                uniqueImageUrls.add(imageUrl);
+        if (cleanedImageUrls.isEmpty()) {
+            binding.imageSliderPager.setVisibility(View.GONE);
+            binding.imageSliderIndicatorContainer.setVisibility(View.GONE);
+            binding.verticalImageContainer.setVisibility(View.GONE);
+            return;
+        }
+
+        // 2. 异步获取所有图片的尺寸
+        // 创建一个列表来存储图片信息（URL和尺寸）
+        final List<Point> imageDimensions = Collections.synchronizedList(new ArrayList<>());
+        // 创建一个计数器，确保所有图片都处理完毕
+        final AtomicInteger counter = new AtomicInteger(cleanedImageUrls.size());
+
+        for (String url : cleanedImageUrls) {
+            Glide.with(this)
+                    .asDrawable()
+                    .load(url)
+                    .into(new CustomTarget<Drawable>() {
+                        @Override
+                        public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
+                            // 成功获取到图片，记录其尺寸
+                            imageDimensions.add(new Point(resource.getIntrinsicWidth(), resource.getIntrinsicHeight()));
+                            // 每处理完一张，计数器减1
+                            if (counter.decrementAndGet() == 0) {
+                                // 所有图片都已处理完毕，开始判断如何展示
+                                runOnUiThread(() -> processAndDisplayImages(cleanedImageUrls, imageDimensions));
+                            }
+                        }
+
+                        @Override
+                        public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                            // 一张图片加载失败，我们依然认为它处理完了
+                            if (counter.decrementAndGet() == 0) {
+                                // 所有图片都已处理完毕
+                                runOnUiThread(() -> processAndDisplayImages(cleanedImageUrls, imageDimensions));
+                            }
+                        }
+
+                        // vvv--- 在这里补上被遗漏的 onLoadCleared 方法 ---vvv
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {
+                            // 这个方法是必须的，但我们在这里通常不需要做什么特别处理，所以方法体留空即可。
+                        }
+                        // ^^^--- 添加结束 ---^^^
+                    });
+        }
+    }
+    // vvv--- 在 NewsDetailActivity 中添加这个全新的方法 ---vvv
+    private void processAndDisplayImages(List<String> urls, List<Point> dimensions) {
+        if (urls.isEmpty() || dimensions.isEmpty()) {
+            return; // 如果没有任何一张图片成功加载，则不显示
+        }
+
+        // 3. 判断所有图片的宽高比是否一致
+        boolean allRatiosAreSimilar = true;
+        // 使用第一张图片的宽高比作为基准
+        double firstRatio = (double) dimensions.get(0).x / dimensions.get(0).y;
+
+        for (int i = 1; i < dimensions.size(); i++) {
+            double currentRatio = (double) dimensions.get(i).x / dimensions.get(i).y;
+            // 允许有5%的误差
+            if (Math.abs(firstRatio - currentRatio) > 0.05) {
+                allRatiosAreSimilar = false;
+                break;
             }
         }
-        // --- 修改结束 ---
 
-
-        // 使用去重后的 uniqueImageUrls 列表进行后续操作
-        if (!uniqueImageUrls.isEmpty()) {
-            ImageSliderAdapter adapter = new ImageSliderAdapter(uniqueImageUrls);
-
-            adapter.setOnAllImagesFailedListener(() -> {
-                runOnUiThread(() -> {
-                    binding.imageSliderPager.setVisibility(View.GONE);
-                    binding.imageSliderIndicatorContainer.setVisibility(View.GONE);
-                });
-            });
-
-            binding.imageSliderPager.setAdapter(adapter);
+        if (allRatiosAreSimilar) {
+            // --- 场景一：宽高比一致，使用画廊模式 ---
+            binding.verticalImageContainer.setVisibility(View.GONE);
             binding.imageSliderPager.setVisibility(View.VISIBLE);
 
-            if (uniqueImageUrls.size() > 1) {
+            // 动态计算画廊高度
+            Display display = getWindowManager().getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+            int screenWidth = size.x;
+            // 根据屏幕宽度和图片宽高比，计算画廊应有的高度
+            int galleryHeight = (int) (screenWidth / firstRatio);
+
+            ViewGroup.LayoutParams params = binding.imageSliderPager.getLayoutParams();
+            params.height = galleryHeight;
+            binding.imageSliderPager.setLayoutParams(params);
+
+            // 设置适配器
+            ImageSliderAdapter adapter = new ImageSliderAdapter(urls);
+            binding.imageSliderPager.setAdapter(adapter);
+
+            // 设置指示器（如果图片多于一张）
+            if (urls.size() > 1) {
                 binding.imageSliderIndicatorContainer.setVisibility(View.VISIBLE);
-                createIndicators(uniqueImageUrls.size());
+                createIndicators(urls.size());
                 binding.imageSliderPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
                     @Override
-                    public void onPageSelected(int position) { super.onPageSelected(position); updateIndicatorState(position); }
+                    public void onPageSelected(int position) {
+                        super.onPageSelected(position);
+                        updateIndicatorState(position);
+                    }
                 });
                 updateIndicatorState(0);
             } else {
                 binding.imageSliderIndicatorContainer.setVisibility(View.GONE);
             }
+
         } else {
+            // --- 场景二：宽高比不一致，使用垂直平铺模式 ---
             binding.imageSliderPager.setVisibility(View.GONE);
             binding.imageSliderIndicatorContainer.setVisibility(View.GONE);
+            binding.verticalImageContainer.setVisibility(View.VISIBLE);
+            binding.verticalImageContainer.removeAllViews(); // 清空容器
+
+            for (String url : urls) {
+                ImageView imageView = new ImageView(this);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+                params.setMargins(0, 0, 0, 16); // 给图片之间加点间距
+                imageView.setLayoutParams(params);
+
+                // 这个属性是关键，它能让ImageView在保持图片原始宽高比的同时，调整自己的边界
+                imageView.setAdjustViewBounds(true);
+
+                Glide.with(this).load(url).into(imageView);
+                binding.verticalImageContainer.addView(imageView);
+            }
         }
     }
+
 
     // ... (rest of the file remains the same)
     private void recordHistory(NewsItem newsItem) {

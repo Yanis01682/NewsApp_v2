@@ -71,6 +71,7 @@
                 android:visibility="gone"
                 tools:visibility="visible" />
 
+
             <LinearLayout
                 android:id="@+id/image_slider_indicator_container"
                 android:layout_width="match_parent"
@@ -80,6 +81,13 @@
                 android:orientation="horizontal"
                 android:visibility="gone"
                 tools:visibility="visible" />
+            <LinearLayout
+                android:id="@+id/vertical_image_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="16dp"
+                android:visibility="gone" />
 
             <androidx.media3.ui.PlayerView
                 android:id="@+id/player_view"
