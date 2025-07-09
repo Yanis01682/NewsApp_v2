@@ -95,7 +95,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         holder.titleTextView.setText(news.getTitle());
         holder.publisherTextView.setText(String.format("%s %s", news.getPublisher(), news.getPublishTime()));
 
-        if (viewedNewsIds.contains(news.getNewsID())) {
+        if (news.getUrl() != null && viewedNewsIds.contains(news.getUrl())) {
             holder.titleTextView.setTextColor(Color.GRAY);
         } else {
             holder.titleTextView.setTextColor(Color.BLACK);

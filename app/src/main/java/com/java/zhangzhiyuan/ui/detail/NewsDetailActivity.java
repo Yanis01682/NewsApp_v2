@@ -66,7 +66,8 @@ public class NewsDetailActivity extends AppCompatActivity {
 
     private AppDatabase db;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private static final List<String> BLOCKED_IMAGE_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn");
+    private static final List<String> BLOCKED_IMAGE_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn","ll.anhuinews.com");
+
 
     private boolean isFavorited = false;
     private NewsItem currentNewsItem;
@@ -257,8 +258,10 @@ public class NewsDetailActivity extends AppCompatActivity {
     // ... (rest of the file remains the same)
     private void recordHistory(NewsItem newsItem) {
         executorService.execute(() -> {
+            if (newsItem.getUrl() == null) return; // 如果URL为空，则不记录
             String newsItemJson = gson.toJson(newsItem);
-            HistoryRecord record = new HistoryRecord(newsItem.getNewsID(), newsItemJson, System.currentTimeMillis());
+            // 使用 URL 作为主键来记录历史
+            HistoryRecord record = new HistoryRecord(newsItem.getUrl(), newsItemJson, System.currentTimeMillis());
             db.historyDao().insert(record);
         });
     }

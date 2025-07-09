@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -32,6 +33,8 @@ public class CategoryFragment extends Fragment {
     private List<Category> myCategories;
     private CategoryRepository categoryRepository;
     private TabLayoutMediator tabLayoutMediator; // 将Mediator提升为成员变量，方便管理
+    private CategoryViewModel categoryViewModel; // <--- 1. 在顶部声明
+
 
     private final ActivityResultLauncher<Intent> categoryManagementLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -46,6 +49,10 @@ public class CategoryFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         categoryRepository = new CategoryRepository(requireContext());
+
+        // vvv--- 2. 在这里初始化ViewModel ---vvv
+        // 通过这种方式获取的ViewModel，可以被所有子Fragment共享
+        categoryViewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
     }
 
     @Nullable
@@ -126,4 +133,21 @@ public class CategoryFragment extends Fragment {
             viewPager.setCurrentItem(currentPosition, false);
         }
     }
+
+    // vvv--- 添加这个新方法 ---vvv
+    public void refreshCurrentList() {
+        // 确保UI组件都已准备好
+        if (tabLayout != null && myCategories != null && !myCategories.isEmpty()) {
+            // 获取当前选中的tab的位置
+            int currentPosition = tabLayout.getSelectedTabPosition();
+            if (currentPosition >= 0 && currentPosition < myCategories.size()) {
+                // 获取当前分类的名字
+                String currentCategoryName = myCategories.get(currentPosition).getName();
+
+                // 使用ViewModel发布一个刷新请求，把分类名作为“告示”内容
+                categoryViewModel.requestRefreshForCategory(currentCategoryName);
+            }
+        }
+    }
+// ^^^--- 添加结束 ---^^^
 }

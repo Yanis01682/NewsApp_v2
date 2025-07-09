@@ -7,7 +7,7 @@ import java.util.List;
 
 public class NewsItem implements Serializable {
     private static final String TAG = "NewsItemParser";
-    private static final List<String> BLOCKED_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn");
+    private static final List<String> BLOCKED_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn","ll.anhuinews.com");
 
     private String newsID;
     private String title;
@@ -16,6 +16,7 @@ public class NewsItem implements Serializable {
     private String image;
     private String content;
     private String video;
+    private String url;
 
     // Getters
     public String getNewsID() { return newsID; }
@@ -24,6 +25,8 @@ public class NewsItem implements Serializable {
     public String getPublishTime() { return publishTime; }
     public String getContent() { return content; }
     public String getRawImageUrls() { return this.image; }
+    public String getUrl() {return url;}
+
 
     public String getImage() {
         String finalUrl = null;

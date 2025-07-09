@@ -4,9 +4,23 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_news"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_news"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/empty_view_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="暂无内容，请检查网络或下拉刷新"
+            android:textSize="16sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_centerInParent="true"
+            android:visibility="gone" /> </RelativeLayout>
 
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
