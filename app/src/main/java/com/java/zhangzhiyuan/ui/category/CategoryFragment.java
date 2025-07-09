@@ -35,6 +35,9 @@ public class CategoryFragment extends Fragment {
     private TabLayoutMediator tabLayoutMediator; // 将Mediator提升为成员变量，方便管理
     private CategoryViewModel categoryViewModel; // <--- 1. 在顶部声明
 
+    // --- 终极武器：一个标志位，用于判断是否是第一次加载 ---
+    private boolean isInitialDataLoaded = false;
+
 
     private final ActivityResultLauncher<Intent> categoryManagementLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -60,10 +63,26 @@ public class CategoryFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_category, container, false);
         initViews(view);
+        // onCreateView只负责创建视图，不加载任何数据
+        return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // --- 终极解决方案：在页面可见时，才决定是否加载数据 ---
+        if (!isInitialDataLoaded) {
+            // 如果是第一次进入该页面，则开始加载分类数据
+            loadCategoriesAndSetupUI();
+            // 标记为已加载过
+            isInitialDataLoaded = true;
+        }
+    }
+
+    private void loadCategoriesAndSetupUI(){
         loadCategories();
         setupViewPagerAndTabs();
         setupListeners();
-        return view;
     }
 
     private void initViews(View view) {

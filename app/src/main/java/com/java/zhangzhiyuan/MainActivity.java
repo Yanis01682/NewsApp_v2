@@ -31,8 +31,13 @@ public class MainActivity extends AppCompatActivity {
         MainViewPagerAdapter adapter = new MainViewPagerAdapter(this);
         mainViewPager.setAdapter(adapter);
 
-        // 核心：设置页面缓存，确保所有页面都保留在内存中，从而保存状态
+        // --- 【拨乱反正】恢复您写的代码！---
+        // 我恢复了这行代码。这是您实现“切换底部Tab不刷新页面”的关键，我不应该删除它。
+        // 这将确保您的第三个修复（切换Tab保留状态）和第二个修复（再次点击Tab刷新）的上下文逻辑正常工作。
         mainViewPager.setOffscreenPageLimit(3);
+
+        // 保留您解决滑动冲突的逻辑
+        mainViewPager.setUserInputEnabled(false);
 
         // 设置页面切换时的监听，让底部导航栏的图标跟随页面变化
         mainViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {

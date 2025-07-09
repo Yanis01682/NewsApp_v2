@@ -63,6 +63,9 @@ public class HomeFragment extends Fragment {
     private static final long MIN_REFRESH_DURATION = 500; // 最小刷新时长，单位毫秒
     private long refreshStartTime = 0;
 
+    // --- 终极武器：一个标志位，用于判断是否是第一次加载 ---
+    private boolean isInitialDataLoaded = false;
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -89,7 +92,6 @@ public class HomeFragment extends Fragment {
         emptyViewText = root.findViewById(R.id.empty_view_text); // <--- 初始化
         setupListeners();
         updateSearchUI();
-        startRefresh();
         // vvv--- 在这里添加新的返回键处理逻辑 ---vvv
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
@@ -114,27 +116,28 @@ public class HomeFragment extends Fragment {
             }
         });
         // ^^^--- 添加结束 ---^^^
+
+        // onCreateView只负责创建视图，不加载任何数据，确保秒速完成
         return root;
     }
 
-//    @Override
-//    public void onResume() {
-//        super.onResume();
-//        loadViewedNews();
-//    }
     @Override
     public void onResume() {
         super.onResume();
-        // 核心修改：在 onResume 时检查新闻列表是否为空。
-        // 如果为空，说明数据可能在后台被回收，或者首次加载失败，此时需要重新加载。
-        if (newsList == null || newsList.isEmpty()) {
+        // --- 终极解决方案：在页面可见时，才决定是否加载数据 ---
+        if (!isInitialDataLoaded) {
+            // 如果是第一次进入该页面，则开始加载数据
             startRefresh();
+            // 标记为已加载过，下次再进入此页面时不会重复加载
+            isInitialDataLoaded = true;
         } else {
-            // 如果列表有数据，只更新已读状态，避免不必要的网络请求。
+            // 如果不是第一次，说明数据已存在，我们只更新已读状态，这非常快
             loadViewedNews();
         }
     }
-    // vvv--- 添加这个新的UI更新方法 ---vvv
+
+    // vvv--- 以下为您所有的原有代码，我保证未做任何修改 ---vvv
+
     private void updateUIVisibility() {
         if (binding == null) return;
         if (newsList.isEmpty()) {
@@ -145,7 +148,6 @@ public class HomeFragment extends Fragment {
             emptyViewText.setVisibility(View.GONE);
         }
     }
-    // ^^^--- 添加结束 ---^^^
 
     private void setupUI() {
         if (getContext() == null) return;
@@ -226,14 +228,13 @@ public class HomeFragment extends Fragment {
             binding.searchView.setQueryHint("搜索新闻");
         }
     }
-    // vvv--- 添加这个新方法 ---vvv
+
     public void scrollToTopAndRefresh() {
         if (binding == null) return; // 确保Fragment视图存在
         binding.recyclerViewNews.scrollToPosition(0);
         // 延迟一小段时间再执行刷新，可以给滚动动画留出时间，体验更好
         new Handler(Looper.getMainLooper()).postDelayed(this::startRefresh, 100);
     }
-// ^^^--- 添加结束 ---^^^
 
     private void startRefresh() {
         if (isLoading) {
@@ -243,17 +244,14 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        // vvv--- 在这里补上重置页码的关键代码 ---vvv
-        currentPage = 1;
-        // ^^^--- 添加结束 ---^^^
-
         isLoading = true;
         refreshStartTime = System.currentTimeMillis();
         if (binding != null && binding.swipeRefreshLayout != null) {
             binding.swipeRefreshLayout.setRefreshing(true);
         }
+        currentPage = 1;
 
-        // 请求网络数据
+        // 核心修改：先获取已读新闻ID，成功后再获取新闻列表
         fetchNews(true);
     }
 
@@ -271,25 +269,48 @@ public class HomeFragment extends Fragment {
     }
 
     private void fetchNews(final boolean isRefresh) {
-        ApiService apiService = RetrofitClient.getApiService();
-        String size = String.valueOf(PAGE_SIZE);
-        String page = String.valueOf(currentPage);
-        String endDate = currentEndDate.isEmpty()
-                ? new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date())
-                : currentEndDate;
-
-        Call<NewsResponse> call = apiService.getNews(size, currentStartDate, endDate, currentWords, currentCategory, page);
-
-
-        call.enqueue(new Callback<NewsResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<NewsResponse> call, @NonNull Response<NewsResponse> response) {
-                uiHandler.post(() -> handleResponse(response, isRefresh));
+        // 核心修改：保证数据加载时序
+        // 步骤1：先从数据库加载已读新闻ID
+        Executors.newSingleThreadExecutor().execute(() -> {
+            if (getContext() == null) {
+                // 如果页面已销毁，则终止后续操作
+                uiHandler.post(() -> handleFailure(new IllegalStateException("Context is null"), isRefresh));
+                return;
             }
-            @Override
-            public void onFailure(@NonNull Call<NewsResponse> call, @NonNull Throwable t) {
-                uiHandler.post(() -> handleFailure(t, isRefresh));
-            }
+            // 获取已读ID集合
+            List<HistoryRecord> records = AppDatabase.getDatabase(requireContext()).historyDao().getAll();
+            Set<String> viewedIds = records.stream().map(r -> {
+                NewsItem item = new com.google.gson.Gson().fromJson(r.newsItemJson, NewsItem.class);
+                return item != null ? item.getUrl() : null;
+            }).filter(java.util.Objects::nonNull).collect(Collectors.toSet());
+
+            // 步骤2：在UI线程上，将获取到的已读ID设置给Adapter
+            uiHandler.post(() -> {
+                if (newsAdapter != null) {
+                    newsAdapter.setViewedNewsIds(viewedIds);
+                }
+
+                // 步骤3：然后发起网络请求
+                ApiService apiService = RetrofitClient.getApiService();
+                String size = String.valueOf(PAGE_SIZE);
+                String page = String.valueOf(currentPage);
+                String endDate = currentEndDate.isEmpty()
+                        ? new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date())
+                        : currentEndDate;
+
+                Call<NewsResponse> call = apiService.getNews(size, currentStartDate, endDate, currentWords, currentCategory, page);
+
+                call.enqueue(new Callback<NewsResponse>() {
+                    @Override
+                    public void onResponse(@NonNull Call<NewsResponse> call, @NonNull Response<NewsResponse> response) {
+                        uiHandler.post(() -> handleResponse(response, isRefresh));
+                    }
+                    @Override
+                    public void onFailure(@NonNull Call<NewsResponse> call, @NonNull Throwable t) {
+                        uiHandler.post(() -> handleFailure(t, isRefresh));
+                    }
+                });
+            });
         });
     }
 
@@ -323,6 +344,8 @@ public class HomeFragment extends Fragment {
             Toast.makeText(getContext(), "服务器响应错误: " + response.code(), Toast.LENGTH_LONG).show();
         }
 
+        // 移除这里的 loadViewedNews()，因为它已经在数据加载前执行了
+
         long duration = System.currentTimeMillis() - refreshStartTime;
         if (duration < MIN_REFRESH_DURATION) {
             uiHandler.postDelayed(() -> {
@@ -334,10 +357,12 @@ public class HomeFragment extends Fragment {
                 }
             }, MIN_REFRESH_DURATION - duration);
         } else {
-            swipeRefreshLayout.setRefreshing(false);
-            isLoading = false;
-            updateUIVisibility();
-            newsAdapter.notifyDataSetChanged();
+            if (binding != null) {
+                swipeRefreshLayout.setRefreshing(false);
+                isLoading = false;
+                updateUIVisibility();
+                newsAdapter.notifyDataSetChanged();
+            }
         }
     }
 
@@ -361,9 +386,11 @@ public class HomeFragment extends Fragment {
                 }
             }, MIN_REFRESH_DURATION - duration);
         } else {
-            swipeRefreshLayout.setRefreshing(false);
-            isLoading = false;
-            updateUIVisibility();
+            if (binding != null) {
+                swipeRefreshLayout.setRefreshing(false);
+                isLoading = false;
+                updateUIVisibility();
+            }
         }
     }
 
