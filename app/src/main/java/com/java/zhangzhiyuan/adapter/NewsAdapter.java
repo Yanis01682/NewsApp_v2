@@ -26,8 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@OptIn(markerClass = UnstableApi.class) // <--- 2. 在类声明的上一行添加这个注解
-
+@OptIn(markerClass = UnstableApi.class)
 public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private final Context context;
@@ -58,23 +57,10 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-//    @Override
-//    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-//        if (holder instanceof NewsViewHolder) {
-//            populateItemRows((NewsViewHolder) holder, position);
-//        }
-//    }
-
-    //新的！！！
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof NewsViewHolder) {
             populateItemRows((NewsViewHolder) holder, position);
-            NewsItem news = newsList.get(position);
-            if (news != null) {
-                // 在此处调用logDetails方法
-                news.logDetails("NewsAdapter");
-            }
         }
     }
 
@@ -106,32 +92,34 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         String imageUrl = news.getImage();
-        // --- 核心修正：在这里清理旧图片并根据URL设置可见性 ---
+
+        // --- 最终的、绝对正确的图片加载逻辑 ---
+
+        // 1. 在绑定新数据前，先重置图片框的状态，确保它在默认情况下是隐藏的。
+        //    这可以防止回收利用(Recycling)时，旧的状态污染新的列表项。
+        holder.imageView.setVisibility(View.GONE);
+
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            holder.imageView.setVisibility(View.VISIBLE); // 先确保可见
             Glide.with(context)
                     .load(imageUrl)
-                    .listener(new RequestListener<>() {
+                    .listener(new RequestListener<Drawable>() {
                         @Override
-                        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                            holder.imageView.setVisibility(View.GONE); // 加载失败则隐藏
+                        public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
+                            // 加载失败。图片框保持 GONE，什么都不做，不留痕迹。
                             return false;
                         }
 
                         @Override
-                        public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                            holder.imageView.setVisibility(View.VISIBLE); // 加载成功确保可见
+                        public boolean onResourceReady(@NonNull Drawable resource, @NonNull Object model, Target<Drawable> target, @NonNull DataSource dataSource, boolean isFirstResource) {
+                            // 只有在这里，当图片已确认有效并准备好显示时，才将图片框设为可见。
+                            holder.imageView.setVisibility(View.VISIBLE);
+                            // 返回 false，让 Glide 继续将图片绘制到 imageView 中。
                             return false;
                         }
                     })
                     .into(holder.imageView);
-        } else {
-            // 如果没有图片URL，不仅要隐藏，还要清除可能存在的旧图
-            holder.imageView.setVisibility(View.GONE);
-            Glide.with(context).clear(holder.imageView);
         }
-        // --- 修正结束 ---
-
+        // --- 逻辑结束 ---
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, NewsDetailActivity.class);
@@ -146,7 +134,6 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         TextView publisherTextView;
         public NewsViewHolder(@NonNull View itemView) {
             super(itemView);
-            // 确保ID与item_news.xml中的ID完全一致
             imageView = itemView.findViewById(R.id.news_image);
             titleTextView = itemView.findViewById(R.id.news_title);
             publisherTextView = itemView.findViewById(R.id.news_publisher);

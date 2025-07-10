@@ -59,18 +59,22 @@ public class HomeFragment extends Fragment {
     private String currentStartDate = "2006-01-01";
     private String currentEndDate = "";
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
-    private TextView emptyViewText; // <--- 在类顶部声明
-    private static final long MIN_REFRESH_DURATION = 500; // 最小刷新时长，单位毫秒
-    private long refreshStartTime = 0;
-
-    // --- 终极武器：一个标志位，用于判断是否是第一次加载 ---
+    private TextView emptyViewText;
     private boolean isInitialDataLoaded = false;
+
+    private boolean isInSearchState = false;
+    private final List<NewsItem> mainFeedCache = new ArrayList<>();
+    private int lastScrollPosition = 0;
+    private int lastScrollOffset = 0;
 
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getParentFragmentManager().setFragmentResultListener(AdvancedSearchDialogFragment.REQUEST_KEY, this, (requestKey, bundle) -> {
+            if (!isInSearchState) {
+                saveMainFeedState();
+            }
             currentWords = bundle.getString(AdvancedSearchDialogFragment.KEY_WORDS, "");
             currentCategory = bundle.getString(AdvancedSearchDialogFragment.KEY_CATEGORY, "");
             currentStartDate = bundle.getString(AdvancedSearchDialogFragment.KEY_START_DATE, "2018-01-01");
@@ -79,6 +83,7 @@ public class HomeFragment extends Fragment {
             }
             currentEndDate = bundle.getString(AdvancedSearchDialogFragment.KEY_END_DATE, "");
 
+            isInSearchState = true;
             updateSearchUI();
             startRefresh();
         });
@@ -89,88 +94,73 @@ public class HomeFragment extends Fragment {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
         setupUI();
-        emptyViewText = root.findViewById(R.id.empty_view_text); // <--- 初始化
+        emptyViewText = root.findViewById(R.id.empty_view_text);
         setupListeners();
         updateSearchUI();
-        // vvv--- 在这里添加新的返回键处理逻辑 ---vvv
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                // 检查当前是否处于搜索结果状态
-                boolean isSearching = !currentWords.isEmpty() || !currentCategory.isEmpty() || !currentEndDate.isEmpty();
-
-                if (isSearching) {
-                    // 如果是，就重置状态，返回到普通首页
-                    currentWords = "";
-                    currentCategory = "";
-                    currentStartDate = "2006-01-01"; // 恢复默认起始日期
-                    currentEndDate = "";
-                    updateSearchUI();
-                    startRefresh();
+                if (isInSearchState) {
+                    restoreMainFeedState();
                 } else {
-                    // 如果不是搜索状态，就执行默认的返回操作（通常是退出App）
-                    // 我们通过禁用此回调并再次调用返回键来实现
                     setEnabled(false);
                     requireActivity().onBackPressed();
                 }
             }
         });
-        // ^^^--- 添加结束 ---^^^
-
-        // onCreateView只负责创建视图，不加载任何数据，确保秒速完成
         return root;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // --- 终极解决方案：在页面可见时，才决定是否加载数据 ---
         if (!isInitialDataLoaded) {
-            // 如果是第一次进入该页面，则开始加载数据
             startRefresh();
-            // 标记为已加载过，下次再进入此页面时不会重复加载
             isInitialDataLoaded = true;
-        } else {
-            // 如果不是第一次，说明数据已存在，我们只更新已读状态，这非常快
+        } else if (!isInSearchState) {
             loadViewedNews();
         }
     }
 
-    // vvv--- 以下为您所有的原有代码，我保证未做任何修改 ---vvv
-
-    private void updateUIVisibility() {
-        if (binding == null) return;
-        if (newsList.isEmpty()) {
-            binding.recyclerViewNews.setVisibility(View.GONE);
-            emptyViewText.setVisibility(View.VISIBLE);
-        } else {
-            binding.recyclerViewNews.setVisibility(View.VISIBLE);
-            emptyViewText.setVisibility(View.GONE);
-        }
-    }
-
-    private void setupUI() {
-        if (getContext() == null) return;
-        recyclerView = binding.recyclerViewNews;
-        swipeRefreshLayout = binding.swipeRefreshLayout;
-        searchView = binding.searchView;
-        btnBackToHome = binding.btnBackToHome;
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        newsList = new ArrayList<>();
-        newsAdapter = new NewsAdapter(getContext(), newsList);
-        recyclerView.setAdapter(newsAdapter);
-
-        // Bug 2: 彻底移除SearchView的下划线
-        try {
-            int searchPlateId = searchView.getContext().getResources().getIdentifier("android:id/search_plate", null, null);
-            View searchPlate = searchView.findViewById(searchPlateId);
-            if (searchPlate != null) {
-                searchPlate.setBackgroundColor(Color.TRANSPARENT);
+    private void saveMainFeedState() {
+        if (recyclerView != null && newsList != null) {
+            mainFeedCache.clear();
+            mainFeedCache.addAll(newsList);
+            LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+            if (layoutManager != null) {
+                lastScrollPosition = layoutManager.findFirstVisibleItemPosition();
+                View firstVisibleItem = layoutManager.findViewByPosition(lastScrollPosition);
+                lastScrollOffset = (firstVisibleItem != null) ? firstVisibleItem.getTop() - recyclerView.getPaddingTop() : 0;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
+
+    private void restoreMainFeedState() {
+        if (binding == null || newsAdapter == null) return;
+
+        currentWords = "";
+        currentCategory = "";
+        currentStartDate = "2006-01-01";
+        currentEndDate = "";
+        isInSearchState = false;
+
+        newsList.clear();
+        newsList.addAll(mainFeedCache);
+        newsAdapter.notifyDataSetChanged();
+
+        if (recyclerView != null && lastScrollPosition >= 0 && lastScrollPosition < newsList.size()) {
+            ((LinearLayoutManager) recyclerView.getLayoutManager()).scrollToPositionWithOffset(lastScrollPosition, lastScrollOffset);
+        }
+
+        updateSearchUI();
+        updateUIVisibility();
+
+        isLoading = false;
+        if (binding.swipeRefreshLayout.isRefreshing()) {
+            binding.swipeRefreshLayout.setRefreshing(false);
+        }
+    }
+
 
     private void setupListeners() {
         swipeRefreshLayout.setOnRefreshListener(this::startRefresh);
@@ -195,25 +185,16 @@ public class HomeFragment extends Fragment {
         });
 
         btnBackToHome.setOnClickListener(v -> {
-            currentWords = "";
-            currentCategory = "";
-            currentStartDate = "2006-01-01";
-            currentEndDate = "";
-            updateSearchUI();
-            startRefresh();
+            if (isInSearchState) {
+                restoreMainFeedState();
+            }
         });
-    }
-
-    private void showAdvancedSearchDialog() {
-        new AdvancedSearchDialogFragment().show(getParentFragmentManager(), "SEARCH_DIALOG");
     }
 
     private void updateSearchUI() {
         if (binding == null) return;
 
-        boolean isSearching = !currentWords.isEmpty() || !currentCategory.isEmpty() || !currentEndDate.isEmpty();
-
-        if (isSearching) {
+        if (isInSearchState) {
             binding.btnBackToHome.setVisibility(View.VISIBLE);
             String hint = currentWords;
             if (hint.isEmpty()) {
@@ -229,30 +210,122 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    public void scrollToTopAndRefresh() {
-        if (binding == null) return; // 确保Fragment视图存在
-        binding.recyclerViewNews.scrollToPosition(0);
-        // 延迟一小段时间再执行刷新，可以给滚动动画留出时间，体验更好
-        new Handler(Looper.getMainLooper()).postDelayed(this::startRefresh, 100);
-    }
-
     private void startRefresh() {
         if (isLoading) {
-            if (binding != null && binding.swipeRefreshLayout != null) {
-                binding.swipeRefreshLayout.setRefreshing(false);
-            }
+            if (binding != null) binding.swipeRefreshLayout.setRefreshing(false);
             return;
         }
-
         isLoading = true;
-        refreshStartTime = System.currentTimeMillis();
-        if (binding != null && binding.swipeRefreshLayout != null) {
-            binding.swipeRefreshLayout.setRefreshing(true);
-        }
         currentPage = 1;
 
-        // 核心修改：先获取已读新闻ID，成功后再获取新闻列表
+        if (binding != null) {
+            if (!binding.swipeRefreshLayout.isRefreshing()) {
+                binding.swipeRefreshLayout.setRefreshing(true);
+            }
+            if (isInSearchState) {
+                if (newsList != null) newsList.clear();
+                if (newsAdapter != null) newsAdapter.notifyDataSetChanged();
+                binding.emptyViewText.setText("搜索中...");
+                binding.recyclerViewNews.setVisibility(View.GONE);
+                binding.emptyViewText.setVisibility(View.VISIBLE);
+                binding.recyclerViewNews.scrollToPosition(0);
+            }
+        }
+
         fetchNews(true);
+    }
+
+    private void handleResponse(Response<NewsResponse> response, boolean isRefresh) {
+        if (binding == null) return;
+
+        if (!isRefresh && !newsList.isEmpty() && newsList.get(newsList.size() - 1) == null) {
+            newsList.remove(newsList.size() - 1);
+            if (newsAdapter != null) newsAdapter.notifyItemRemoved(newsList.size());
+        }
+
+        if (response.isSuccessful() && response.body() != null) {
+            List<NewsItem> fetchedNews = response.body().getData();
+            if (isRefresh) {
+                newsList.clear();
+            }
+            if (fetchedNews != null && !fetchedNews.isEmpty()) {
+                Set<String> existingUrls = newsList.stream()
+                        .map(NewsItem::getUrl)
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toSet());
+                for (NewsItem newItem : fetchedNews) {
+                    if (newItem != null && newItem.getUrl() != null && !existingUrls.contains(newItem.getUrl())) {
+                        newsList.add(newItem);
+                        existingUrls.add(newItem.getUrl());
+                    }
+                }
+            }
+        } else {
+            Toast.makeText(getContext(), "服务器响应错误: " + response.code(), Toast.LENGTH_LONG).show();
+        }
+
+        binding.swipeRefreshLayout.setRefreshing(false);
+        isLoading = false;
+        updateUIVisibility();
+        if(newsAdapter != null) {
+            newsAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private void handleFailure(Throwable t, boolean isRefresh) {
+        if (binding == null) return;
+
+        if (!isRefresh && !newsList.isEmpty() && newsList.get(newsList.size() - 1) == null) {
+            newsList.remove(newsList.size() - 1);
+            if (newsAdapter != null) newsAdapter.notifyItemRemoved(newsList.size());
+        }
+
+        Toast.makeText(getContext(), "网络请求失败", Toast.LENGTH_LONG).show();
+
+        binding.swipeRefreshLayout.setRefreshing(false);
+        isLoading = false;
+        updateUIVisibility();
+    }
+    private void updateUIVisibility() {
+        if (binding == null) return;
+        if (newsList.isEmpty()) {
+            binding.recyclerViewNews.setVisibility(View.GONE);
+            binding.emptyViewText.setText("暂无内容，请检查网络或下拉刷新");
+            binding.emptyViewText.setVisibility(View.VISIBLE);
+        } else {
+            binding.recyclerViewNews.setVisibility(View.VISIBLE);
+            binding.emptyViewText.setVisibility(View.GONE);
+        }
+    }
+    private void setupUI() {
+        if (getContext() == null) return;
+        recyclerView = binding.recyclerViewNews;
+        swipeRefreshLayout = binding.swipeRefreshLayout;
+        searchView = binding.searchView;
+        btnBackToHome = binding.btnBackToHome;
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        newsList = new ArrayList<>();
+        newsAdapter = new NewsAdapter(getContext(), newsList);
+        recyclerView.setAdapter(newsAdapter);
+
+        try {
+            int searchPlateId = searchView.getContext().getResources().getIdentifier("android:id/search_plate", null, null);
+            View searchPlate = searchView.findViewById(searchPlateId);
+            if (searchPlate != null) {
+                searchPlate.setBackgroundColor(Color.TRANSPARENT);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private void showAdvancedSearchDialog() {
+        new AdvancedSearchDialogFragment().show(getParentFragmentManager(), "SEARCH_DIALOG");
+    }
+
+    public void scrollToTopAndRefresh() {
+        if (binding == null) return;
+        binding.recyclerViewNews.scrollToPosition(0);
+        new Handler(Looper.getMainLooper()).postDelayed(this::startRefresh, 100);
     }
 
     private void loadMoreNews() {
@@ -269,28 +342,22 @@ public class HomeFragment extends Fragment {
     }
 
     private void fetchNews(final boolean isRefresh) {
-        // 核心修改：保证数据加载时序
-        // 步骤1：先从数据库加载已读新闻ID
         Executors.newSingleThreadExecutor().execute(() -> {
             if (getContext() == null) {
-                // 如果页面已销毁，则终止后续操作
                 uiHandler.post(() -> handleFailure(new IllegalStateException("Context is null"), isRefresh));
                 return;
             }
-            // 获取已读ID集合
             List<HistoryRecord> records = AppDatabase.getDatabase(requireContext()).historyDao().getAll();
             Set<String> viewedIds = records.stream().map(r -> {
                 NewsItem item = new com.google.gson.Gson().fromJson(r.newsItemJson, NewsItem.class);
                 return item != null ? item.getUrl() : null;
             }).filter(java.util.Objects::nonNull).collect(Collectors.toSet());
 
-            // 步骤2：在UI线程上，将获取到的已读ID设置给Adapter
             uiHandler.post(() -> {
                 if (newsAdapter != null) {
                     newsAdapter.setViewedNewsIds(viewedIds);
                 }
 
-                // 步骤3：然后发起网络请求
                 ApiService apiService = RetrofitClient.getApiService();
                 String size = String.valueOf(PAGE_SIZE);
                 String page = String.valueOf(currentPage);
@@ -314,91 +381,10 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void handleResponse(Response<NewsResponse> response, boolean isRefresh) {
-        if (binding == null) return;
-
-        if (!isRefresh && !newsList.isEmpty() && newsList.get(newsList.size() - 1) == null) {
-            newsList.remove(newsList.size() - 1);
-            newsAdapter.notifyItemRemoved(newsList.size());
-        }
-
-        if (response.isSuccessful() && response.body() != null) {
-            List<NewsItem> fetchedNews = response.body().getData();
-            if (isRefresh) {
-                newsList.clear();
-            }
-            if (fetchedNews != null && !fetchedNews.isEmpty()) {
-                // 这里是之前修改过的、基于URL的去重逻辑
-                Set<String> existingUrls = newsList.stream()
-                        .map(NewsItem::getUrl)
-                        .filter(java.util.Objects::nonNull)
-                        .collect(Collectors.toSet());
-                for (NewsItem newItem : fetchedNews) {
-                    if (newItem != null && newItem.getUrl() != null && !existingUrls.contains(newItem.getUrl())) {
-                        newsList.add(newItem);
-                        existingUrls.add(newItem.getUrl());
-                    }
-                }
-            }
-        } else {
-            Toast.makeText(getContext(), "服务器响应错误: " + response.code(), Toast.LENGTH_LONG).show();
-        }
-
-        // 移除这里的 loadViewedNews()，因为它已经在数据加载前执行了
-
-        long duration = System.currentTimeMillis() - refreshStartTime;
-        if (duration < MIN_REFRESH_DURATION) {
-            uiHandler.postDelayed(() -> {
-                if (binding != null) {
-                    swipeRefreshLayout.setRefreshing(false);
-                    isLoading = false;
-                    updateUIVisibility();
-                    newsAdapter.notifyDataSetChanged();
-                }
-            }, MIN_REFRESH_DURATION - duration);
-        } else {
-            if (binding != null) {
-                swipeRefreshLayout.setRefreshing(false);
-                isLoading = false;
-                updateUIVisibility();
-                newsAdapter.notifyDataSetChanged();
-            }
-        }
-    }
-
-    private void handleFailure(Throwable t, boolean isRefresh) {
-        if (binding == null) return;
-
-        if (!isRefresh && !newsList.isEmpty() && newsList.get(newsList.size() - 1) == null) {
-            newsList.remove(newsList.size() - 1);
-            newsAdapter.notifyItemRemoved(newsList.size());
-        }
-
-        Toast.makeText(getContext(), "网络请求失败", Toast.LENGTH_LONG).show();
-
-        long duration = System.currentTimeMillis() - refreshStartTime;
-        if (duration < MIN_REFRESH_DURATION) {
-            uiHandler.postDelayed(() -> {
-                if (binding != null) {
-                    swipeRefreshLayout.setRefreshing(false);
-                    isLoading = false;
-                    updateUIVisibility();
-                }
-            }, MIN_REFRESH_DURATION - duration);
-        } else {
-            if (binding != null) {
-                swipeRefreshLayout.setRefreshing(false);
-                isLoading = false;
-                updateUIVisibility();
-            }
-        }
-    }
-
     private void loadViewedNews() {
         if (getContext() == null) return;
         Executors.newSingleThreadExecutor().execute(() -> {
             List<HistoryRecord> records = AppDatabase.getDatabase(requireContext()).historyDao().getAll();
-            // 从历史记录的JSON中解析出URL作为已读ID
             Set<String> viewedIds = records.stream().map(r -> {
                 NewsItem item = new com.google.gson.Gson().fromJson(r.newsItemJson, NewsItem.class);
                 return item != null ? item.getUrl() : null;
