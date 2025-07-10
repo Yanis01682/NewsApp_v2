@@ -28,6 +28,8 @@ public class NewsItem implements Serializable {
     public String getUrl() {return url;}
 
 
+    // 替换 NewsItem.java 中的 getImage() 方法
+
     public String getImage() {
         // 1. 检查原始数据是否为空
         if (this.image == null || this.image.trim().isEmpty()) {
@@ -46,18 +48,28 @@ public class NewsItem implements Serializable {
             return null;
         }
 
-        // 4. 按逗号分割，并取第一个非空部分作为URL
+        // 4. 按逗号分割URL
         String[] urls = processedImage.split(",");
-        if (urls.length > 0) {
-            String firstUrl = urls[0].trim();
-            if (!firstUrl.isEmpty()) {
-                // 5. 【关键】直接返回解析出的第一个URL，不再进行任何域名屏蔽检查。
-                //    让视图层(Adapter)的Glide去负责加载，加载失败则由RequestListener处理。
-                return firstUrl;
+
+        // 5. 【关键修正】遍历所有URL，找到第一个【未被屏蔽】的URL并返回
+        for (String url : urls) {
+            String trimmedUrl = url.trim();
+            if (!trimmedUrl.isEmpty()) {
+                boolean isBlocked = false;
+                for (String blockedDomain : BLOCKED_DOMAINS) {
+                    if (trimmedUrl.contains(blockedDomain)) {
+                        isBlocked = true;
+                        break; // 发现是屏蔽域名，立刻停止检查这个URL
+                    }
+                }
+                // 如果这个URL没有被屏蔽，那么它就是我们想要的，立刻返回它
+                if (!isBlocked) {
+                    return trimmedUrl;
+                }
             }
         }
 
-        // 如果上述步骤都未能解析出URL，则返回null
+        // 如果遍历完所有URL都发现被屏蔽了，或者没有有效的URL，则返回null
         return null;
     }
 

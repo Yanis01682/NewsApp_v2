@@ -82,7 +82,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         NewsItem news = newsList.get(position);
         if (news == null) return;
 
-        // --- 1. 设置文本和点击事件 (这部分逻辑不变) ---
+        // --- 1. 文本和点击事件的逻辑保持不变 ---
         holder.titleTextView.setText(news.getTitle());
         holder.publisherTextView.setText(String.format("%s %s", news.getPublisher(), news.getPublishTime()));
         holder.itemView.setOnClickListener(v -> {
@@ -96,41 +96,28 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             holder.titleTextView.setTextColor(Color.BLACK);
         }
 
-        // --- 2. 【最终版、防闪动、最最最稳妥的图片处理逻辑】 ---
+        // --- 2. 【终极版】图片处理逻辑 ---
         final String imageUrl = news.getImage();
 
-        // 分支1: 如果新闻项【有】图片URL
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-
-            // 【关键】先把图片框设置为“隐身”状态。
-            // 它会占据布局空间，但用户看不见它，这就防止了布局跳动和“闪动”。
-            holder.imageView.setVisibility(View.INVISIBLE);
-
+        // 分支 A: 如果这个新闻【没有】图片URL
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            // 【关键步骤 1】: 强制取消之前可能在这个ImageView上进行的任何Glide加载任务。
+            Glide.with(context).clear(holder.imageView);
+            // 【关键步骤 2】: 将ImageView彻底隐藏，并且不占用任何布局空间。
+            holder.imageView.setVisibility(View.GONE);
+        }
+        // 分支 B: 如果这个新闻【有】图片URL
+        else {
+            // 【关键步骤 3】: 先让ImageView在布局中可见，准备好承载新图片。
+            holder.imageView.setVisibility(View.VISIBLE);
+            // 【关键步骤 4】: 使用Glide加载新图片。
             Glide.with(context)
                     .load(imageUrl)
-                    .listener(new RequestListener<Drawable>() {
-                        @Override
-                        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                            // 【关键】链接失效，加载失败。
-                            // 此时，将图片框从“隐身”变为“彻底消失”，它占据的空间会被回收。
-                            holder.imageView.setVisibility(View.GONE);
-                            return false;
-                        }
-
-                        @Override
-                        public boolean onResourceReady(@NonNull Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                            // 【关键】图片加载成功！
-                            // 此时，将图片框从“隐身”变为“可见”，图片优雅地出现，不会有任何闪动。
-                            holder.imageView.setVisibility(View.VISIBLE);
-                            return false;
-                        }
-                    })
+                    // 让Glide来管理占位图，它会在开始加载时显示
+                    .placeholder(R.drawable.placeholder_image_background)
+                    // 如果加载失败，显示一张“图片损坏”的图标
+                    .error(R.drawable.ic_baseline_broken_image_24)
                     .into(holder.imageView);
-        }
-        // 分支2: 如果新闻项【没有】图片URL
-        else {
-            // 彻底隐藏图片框，不占空间。
-            holder.imageView.setVisibility(View.GONE);
         }
     }
 
