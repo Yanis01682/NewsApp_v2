@@ -74,7 +74,7 @@ public class NewsDetailActivity extends AppCompatActivity {
 
     private AppDatabase db;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private static final List<String> BLOCKED_IMAGE_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn","ll.anhuinews.com","static.cnbetacdn.com","pic.enorth.com.cn","cssn.cn");
+    private static final List<String> BLOCKED_IMAGE_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn","ll.anhuinews.com","static.cnbetacdn.com","pic.enorth.com.cn","cssn.cn","static.statickksmg.com");
 
 
     private boolean isFavorited = false;
