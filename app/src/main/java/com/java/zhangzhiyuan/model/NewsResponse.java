@@ -2,6 +2,7 @@ package com.java.zhangzhiyuan.model;
 
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
+@SuppressWarnings("unused")
 
 public class NewsResponse {
 //新闻列表

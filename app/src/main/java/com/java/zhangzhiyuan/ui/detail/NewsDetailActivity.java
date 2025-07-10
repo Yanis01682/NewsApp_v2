@@ -197,24 +197,42 @@ public class NewsDetailActivity extends AppCompatActivity {
     }
 
 
+    // 在 NewsDetailActivity.java 文件中
+
     private void handleImageGallery(NewsItem newsItem) {
         String rawImageUrls = newsItem.getRawImageUrls();
-        List<String> cleanedImageUrls = new ArrayList<>();
+        // 步骤 1: 从原始字符串解析出初始的图片URL列表
+        List<String> initialImageUrls = new ArrayList<>();
 
-        // 1. 清理和去重图片URL（这部分逻辑保留）
         if (rawImageUrls != null && rawImageUrls.startsWith("[") && rawImageUrls.endsWith("]")) {
             String urlsInsideBrackets = rawImageUrls.substring(1, rawImageUrls.length() - 1);
             if (!urlsInsideBrackets.trim().isEmpty()) {
                 String[] urlArray = urlsInsideBrackets.split(",");
                 for (String url : urlArray) {
                     String trimmedUrl = url.trim();
-                    if (!trimmedUrl.isEmpty() && !cleanedImageUrls.contains(trimmedUrl)) {
-                        cleanedImageUrls.add(trimmedUrl);
+                    if (!trimmedUrl.isEmpty() && !initialImageUrls.contains(trimmedUrl)) {
+                        initialImageUrls.add(trimmedUrl);
                     }
                 }
             }
         }
 
+        // 步骤 2: 过滤掉被屏蔽的域名，生成最终干净的URL列表
+        final List<String> cleanedImageUrls = new ArrayList<>();
+        for (String url : initialImageUrls) {
+            boolean isBlocked = false;
+            for (String blockedDomain : BLOCKED_IMAGE_DOMAINS) {
+                if (url.contains(blockedDomain)) {
+                    isBlocked = true;
+                    break;
+                }
+            }
+            if (!isBlocked) {
+                cleanedImageUrls.add(url);
+            }
+        }
+
+        // 如果过滤后列表为空，则隐藏所有图片相关视图并返回
         if (cleanedImageUrls.isEmpty()) {
             binding.imageSliderPager.setVisibility(View.GONE);
             binding.imageSliderIndicatorContainer.setVisibility(View.GONE);
@@ -222,43 +240,36 @@ public class NewsDetailActivity extends AppCompatActivity {
             return;
         }
 
-        // 2. 异步获取所有图片的尺寸
-        // 创建一个列表来存储图片信息（URL和尺寸）
+        // 步骤 3: 异步获取所有干净图片的尺寸
         final List<Point> imageDimensions = Collections.synchronizedList(new ArrayList<>());
-        // 创建一个计数器，确保所有图片都处理完毕
         final AtomicInteger counter = new AtomicInteger(cleanedImageUrls.size());
 
-        for (String url : cleanedImageUrls) {
+        for (String url : cleanedImageUrls) { // <-- 确保这里使用的是过滤后的 cleanedImageUrls
             Glide.with(this)
                     .asDrawable()
                     .load(url)
                     .into(new CustomTarget<Drawable>() {
                         @Override
                         public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
-                            // 成功获取到图片，记录其尺寸
                             imageDimensions.add(new Point(resource.getIntrinsicWidth(), resource.getIntrinsicHeight()));
-                            // 每处理完一张，计数器减1
                             if (counter.decrementAndGet() == 0) {
-                                // 所有图片都已处理完毕，开始判断如何展示
+                                // 所有图片都处理完毕
                                 runOnUiThread(() -> processAndDisplayImages(cleanedImageUrls, imageDimensions));
                             }
                         }
 
                         @Override
                         public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                            // 一张图片加载失败，我们依然认为它处理完了
                             if (counter.decrementAndGet() == 0) {
-                                // 所有图片都已处理完毕
+                                // 所有图片都处理完毕
                                 runOnUiThread(() -> processAndDisplayImages(cleanedImageUrls, imageDimensions));
                             }
                         }
 
-                        // vvv--- 在这里补上被遗漏的 onLoadCleared 方法 ---vvv
                         @Override
                         public void onLoadCleared(@Nullable Drawable placeholder) {
-                            // 这个方法是必须的，但我们在这里通常不需要做什么特别处理，所以方法体留空即可。
+                            // 此方法必须被重写
                         }
-                        // ^^^--- 添加结束 ---^^^
                     });
         }
     }
@@ -432,15 +443,13 @@ public class NewsDetailActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             initializePlayer();
-        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.N && player == null)) {
+        if (player == null) {
             initializePlayer();
         }
     }
@@ -448,17 +457,13 @@ public class NewsDetailActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             releasePlayer();
-        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             releasePlayer();
-        }
     }
 
     private void createIndicators(int count) {

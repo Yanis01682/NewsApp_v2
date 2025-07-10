@@ -11,6 +11,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.media3.common.util.UnstableApi;
+import androidx.annotation.OptIn;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
@@ -23,6 +25,8 @@ import com.java.zhangzhiyuan.ui.detail.NewsDetailActivity;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+@OptIn(markerClass = UnstableApi.class) // <--- 2. 在类声明的上一行添加这个注解
 
 public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -102,31 +106,31 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         String imageUrl = news.getImage();
+        // --- 核心修正：在这里清理旧图片并根据URL设置可见性 ---
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            // 先确保ImageView是可见的，以便Glide可以测量它
-            holder.imageView.setVisibility(View.VISIBLE);
+            holder.imageView.setVisibility(View.VISIBLE); // 先确保可见
             Glide.with(context)
                     .load(imageUrl)
-                    .listener(new RequestListener<Drawable>() {
+                    .listener(new RequestListener<>() {
                         @Override
                         public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                            // --- 核心修正：加载失败时，隐藏ImageView ---
-                            holder.imageView.setVisibility(View.GONE);
-                            return false; // 返回false，让Glide处理错误占位符（如果你设置了的话）
+                            holder.imageView.setVisibility(View.GONE); // 加载失败则隐藏
+                            return false;
                         }
 
                         @Override
                         public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                            // 图片加载成功，确保ImageView是可见的
-                            holder.imageView.setVisibility(View.VISIBLE);
-                            return false; // 返回false，让Glide继续将图片设置到Target中
+                            holder.imageView.setVisibility(View.VISIBLE); // 加载成功确保可见
+                            return false;
                         }
                     })
                     .into(holder.imageView);
         } else {
-            // 如果没有图片URL，直接隐藏
+            // 如果没有图片URL，不仅要隐藏，还要清除可能存在的旧图
             holder.imageView.setVisibility(View.GONE);
+            Glide.with(context).clear(holder.imageView);
         }
+        // --- 修正结束 ---
 
 
         holder.itemView.setOnClickListener(v -> {
