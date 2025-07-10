@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -74,7 +73,7 @@ public class NewsDetailActivity extends AppCompatActivity {
 
     private AppDatabase db;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private static final List<String> BLOCKED_IMAGE_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn","ll.anhuinews.com","static.cnbetacdn.com","pic.enorth.com.cn","cssn.cn","static.statickksmg.com");
+    private static final List<String> BLOCKED_IMAGE_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn","ll.anhuinews.com","static.cnbetacdn.com","pic.enorth.com.cn","cssn.cn","static.statickksmg.com","pic.anhuinews.com","kjt.fujian.gov.cn");
 
 
     private boolean isFavorited = false;

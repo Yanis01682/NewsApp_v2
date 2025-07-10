@@ -7,7 +7,7 @@ import java.util.List;
 
 public class NewsItem implements Serializable {
     private static final String TAG = "NewsItemParser";
-    private static final List<String> BLOCKED_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn","ll.anhuinews.com","static.cnbetacdn.com","pic.enorth.com.cn","cssn.cn","static.statickksmg.com");
+    private static final List<String> BLOCKED_DOMAINS = Arrays.asList("n.sinaimg.cn", "imgpai.thepaper.cn", "p1.ifengimg.com", "finance.people.com.cn","ll.anhuinews.com","static.cnbetacdn.com","pic.enorth.com.cn","cssn.cn","static.statickksmg.com","kjt.fujian.gov.cn");
 
     private String newsID;
     private String title;
@@ -36,42 +36,47 @@ public class NewsItem implements Serializable {
             return null;
         }
 
+        // 2. 去掉首尾的双引号（如果有的话）
         String processedImage = this.image.trim();
-
-        // 2. 兼容处理：如果字符串被[]包围，则去掉它们
-        if (processedImage.startsWith("[") && processedImage.endsWith("]")) {
+        if (processedImage.startsWith("\"") && processedImage.endsWith("\"")) {
             processedImage = processedImage.substring(1, processedImage.length() - 1).trim();
         }
 
-        // 3. 如果处理后为空，则返回null
+        // 3. 去除所有的方括号 [] 和空格
+        processedImage = processedImage.replace("[", "").replace("]", "").trim();
+
+        // 4. 如果处理后为空，直接返回null
         if (processedImage.isEmpty()) {
             return null;
         }
 
-        // 4. 按逗号分割URL
+        // 5. 按逗号分割URL
         String[] urls = processedImage.split(",");
 
-        // 5. 【关键修正】遍历所有URL，找到第一个【未被屏蔽】的URL并返回
+        // 6. 遍历URL，找第一个有效且没有被屏蔽的URL
         for (String url : urls) {
             String trimmedUrl = url.trim();
             if (!trimmedUrl.isEmpty()) {
                 boolean isBlocked = false;
+                // 检查是否为屏蔽的域名
                 for (String blockedDomain : BLOCKED_DOMAINS) {
                     if (trimmedUrl.contains(blockedDomain)) {
                         isBlocked = true;
-                        break; // 发现是屏蔽域名，立刻停止检查这个URL
+                        break; // 发现是屏蔽域名，停止检查
                     }
                 }
-                // 如果这个URL没有被屏蔽，那么它就是我们想要的，立刻返回它
+                // 返回第一个未屏蔽的URL
                 if (!isBlocked) {
                     return trimmedUrl;
                 }
             }
         }
 
-        // 如果遍历完所有URL都发现被屏蔽了，或者没有有效的URL，则返回null
+        // 如果没有找到有效的图片URL，则返回null
         return null;
     }
+
+
 
     public String getVideo() {
         // 原始的getVideo逻辑保持不变
