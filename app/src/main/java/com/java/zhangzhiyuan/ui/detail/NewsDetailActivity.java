@@ -112,7 +112,6 @@ public class NewsDetailActivity extends AppCompatActivity {
         }
     }
 
-    // ... (other methods like onCreateOptionsMenu, etc. remain unchanged)
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_news_detail, menu);
@@ -203,14 +202,17 @@ public class NewsDetailActivity extends AppCompatActivity {
         // 步骤 1: 从原始字符串解析出初始的图片URL列表
         List<String> initialImageUrls = new ArrayList<>();
 
-        if (rawImageUrls != null && rawImageUrls.startsWith("[") && rawImageUrls.endsWith("]")) {
-            String urlsInsideBrackets = rawImageUrls.substring(1, rawImageUrls.length() - 1);
-            if (!urlsInsideBrackets.trim().isEmpty()) {
-                String[] urlArray = urlsInsideBrackets.split(",");
+        if (rawImageUrls != null && !rawImageUrls.trim().isEmpty()) {
+            // 去除掉所有的方括号 []
+            String processedImageUrls = rawImageUrls.replace("[", "").replace("]", "").trim();
+
+            if (!processedImageUrls.isEmpty()) {
+                // 按逗号分割URL
+                String[] urlArray = processedImageUrls.split(",");
                 for (String url : urlArray) {
                     String trimmedUrl = url.trim();
                     if (!trimmedUrl.isEmpty() && !initialImageUrls.contains(trimmedUrl)) {
-                        initialImageUrls.add(trimmedUrl);
+                        initialImageUrls.add(trimmedUrl); // 存储有效的URL
                     }
                 }
             }
@@ -223,11 +225,11 @@ public class NewsDetailActivity extends AppCompatActivity {
             for (String blockedDomain : BLOCKED_IMAGE_DOMAINS) {
                 if (url.contains(blockedDomain)) {
                     isBlocked = true;
-                    break;
+                    break; // 发现是屏蔽域名，停止检查
                 }
             }
             if (!isBlocked) {
-                cleanedImageUrls.add(url);
+                cleanedImageUrls.add(url); // 只有有效URL才添加
             }
         }
 
@@ -243,7 +245,7 @@ public class NewsDetailActivity extends AppCompatActivity {
         final List<Point> imageDimensions = Collections.synchronizedList(new ArrayList<>());
         final AtomicInteger counter = new AtomicInteger(cleanedImageUrls.size());
 
-        for (String url : cleanedImageUrls) { // <-- 确保这里使用的是过滤后的 cleanedImageUrls
+        for (String url : cleanedImageUrls) { // <-- 使用的是过滤后的 cleanedImageUrls
             Glide.with(this)
                     .asDrawable()
                     .load(url)
@@ -272,6 +274,7 @@ public class NewsDetailActivity extends AppCompatActivity {
                     });
         }
     }
+
     // vvv--- 在 NewsDetailActivity 中添加这个全新的方法 ---vvv
     private void processAndDisplayImages(List<String> urls, List<Point> dimensions) {
         if (urls.isEmpty() || dimensions.isEmpty()) {
