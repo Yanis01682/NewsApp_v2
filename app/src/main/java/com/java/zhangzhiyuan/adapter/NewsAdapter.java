@@ -82,51 +82,48 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         NewsItem news = newsList.get(position);
         if (news == null) return;
 
+        // --- 文本和点击事件的设置 (这部分不变) ---
         holder.titleTextView.setText(news.getTitle());
         holder.publisherTextView.setText(String.format("%s %s", news.getPublisher(), news.getPublishTime()));
-
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, NewsDetailActivity.class);
+            intent.putExtra("news_item", news);
+            context.startActivity(intent);
+        });
         if (news.getUrl() != null && viewedNewsIds.contains(news.getUrl())) {
             holder.titleTextView.setTextColor(Color.GRAY);
         } else {
             holder.titleTextView.setTextColor(Color.BLACK);
         }
 
+        // --- 【最终版图片处理铁律】 ---
         String imageUrl = news.getImage();
 
-        // --- 最终的、绝对正确的图片加载逻辑 ---
-
-        // 1. 在绑定新数据前，先重置图片框的状态，确保它在默认情况下是隐藏的。
-        //    这可以防止回收利用(Recycling)时，旧的状态污染新的列表项。
-        holder.imageView.setVisibility(View.GONE);
-
+        // 1. 判断是否有图片
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            // 如果有，就必须先让图片框可见，准备接收图片
+            holder.imageView.setVisibility(View.VISIBLE);
+
+            // 然后命令Glide加载图片
             Glide.with(context)
                     .load(imageUrl)
-                    .listener(new RequestListener<Drawable>() {
-                        @Override
-                        public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
-                            // 加载失败。图片框保持 GONE，什么都不做，不留痕迹。
-                            return false;
-                        }
-
-                        @Override
-                        public boolean onResourceReady(@NonNull Drawable resource, @NonNull Object model, Target<Drawable> target, @NonNull DataSource dataSource, boolean isFirstResource) {
-                            // 只有在这里，当图片已确认有效并准备好显示时，才将图片框设为可见。
-                            holder.imageView.setVisibility(View.VISIBLE);
-                            // 返回 false，让 Glide 继续将图片绘制到 imageView 中。
-                            return false;
-                        }
-                    })
+                    // 加载开始前，显示一个占位的“框框”
+                    .placeholder(R.drawable.placeholder_image_background)
+                    // 如果加载失败（链接失效等），也显示同一个“框框”或一个错误图标
+                    // 为了实现“加载失败就不显示”，请确保你的error drawable是透明的，或者直接移除.error()这一行
+                    .error(R.drawable.placeholder_image_background) // 或者注释掉/删除此行
                     .into(holder.imageView);
-        }
-        // --- 逻辑结束 ---
 
-        holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, NewsDetailActivity.class);
-            intent.putExtra("news_item", news);
-            context.startActivity(intent);
-        });
+        } else {
+            // 2. 如果没有任何图片URL
+            // a. 清除这个ImageView可能因为复用而残留的任何旧图片
+            Glide.with(context).clear(holder.imageView);
+            // b. 强制将它从布局中彻底隐藏
+            holder.imageView.setVisibility(View.GONE);
+        }
     }
+
+
 
     static class NewsViewHolder extends RecyclerView.ViewHolder {
         ImageView imageView;

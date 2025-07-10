@@ -29,28 +29,36 @@ public class NewsItem implements Serializable {
 
 
     public String getImage() {
-        String finalUrl = null;
-        if (image != null && image.length() > 2) {
-            String contentInsideBrackets = image.substring(1, image.length() - 1).trim();
-            if (!contentInsideBrackets.isEmpty()) {
-                String[] urls = contentInsideBrackets.split(",");
-                for (String url : urls) {
-                    String trimmedUrl = url.trim();
-                    if (!trimmedUrl.isEmpty()) {
-                        finalUrl = trimmedUrl;
-                        break;
-                    }
-                }
+        // 1. 检查原始数据是否为空
+        if (this.image == null || this.image.trim().isEmpty()) {
+            return null;
+        }
+
+        String processedImage = this.image.trim();
+
+        // 2. 兼容处理：如果字符串被[]包围，则去掉它们
+        if (processedImage.startsWith("[") && processedImage.endsWith("]")) {
+            processedImage = processedImage.substring(1, processedImage.length() - 1).trim();
+        }
+
+        // 3. 如果处理后为空，则返回null
+        if (processedImage.isEmpty()) {
+            return null;
+        }
+
+        // 4. 按逗号分割，并取第一个非空部分作为URL
+        String[] urls = processedImage.split(",");
+        if (urls.length > 0) {
+            String firstUrl = urls[0].trim();
+            if (!firstUrl.isEmpty()) {
+                // 5. 【关键】直接返回解析出的第一个URL，不再进行任何域名屏蔽检查。
+                //    让视图层(Adapter)的Glide去负责加载，加载失败则由RequestListener处理。
+                return firstUrl;
             }
         }
-        if (finalUrl != null) {
-            for (String blockedDomain : BLOCKED_DOMAINS) {
-                if (finalUrl.contains(blockedDomain)) {
-                    return null; // 直接返回null
-                }
-            }
-        }
-        return finalUrl;
+
+        // 如果上述步骤都未能解析出URL，则返回null
+        return null;
     }
 
     public String getVideo() {

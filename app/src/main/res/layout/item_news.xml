@@ -23,13 +23,12 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
         android:scaleType="centerCrop"
-        android:visibility="gone" />
-
+        android:visibility="visible"  android:src="@drawable/placeholder_image_background" />
     <TextView
-        android:id="@+id/news_publisher"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="来源 2025-07-04"
-        android:textSize="12sp" />
+    android:id="@+id/news_publisher"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="来源 2025-07-04"
+    android:textSize="12sp" />
 
 </LinearLayout>
