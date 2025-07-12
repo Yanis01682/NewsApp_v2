@@ -29,7 +29,7 @@ public class Category implements Serializable {
         Category category = (Category) o;
         return Objects.equals(name, category.name) && Objects.equals(value, category.value);
     }
-
+//Java规定，如果两个对象通过 equals 比较是相等的，那么它们的 hashCode 值也必须相等。
     @Override
     public int hashCode() {
         return Objects.hash(name, value);

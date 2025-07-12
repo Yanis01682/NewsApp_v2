@@ -27,7 +27,7 @@ public class NewsListActivity extends AppCompatActivity {
     public static final String EXTRA_TYPE = "list_type";
     public static final String TYPE_HISTORY = "history";
     public static final String TYPE_FAVORITES = "favorites";
-    public static final String TYPE_NOTES = "notes"; // 新增
+    public static final String TYPE_NOTES = "notes";
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private RecyclerView recyclerView;
@@ -75,6 +75,7 @@ public class NewsListActivity extends AppCompatActivity {
     }
 
     private void loadHistory() {
+        //所有数据库操作都在子线程中执行。
         executorService.execute(() -> {
             List<HistoryRecord> records = AppDatabase.getDatabase(this).historyDao().getAll();
             Set<String> viewedIds = records.stream().map(r -> r.newsId).collect(Collectors.toSet());

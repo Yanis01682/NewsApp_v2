@@ -1,5 +1,6 @@
 package com.java.zhangzhiyuan.adapter;
-
+//构建了item_note.xml
+//因为“我的笔记”列表的样式和普通新闻列表不同，所以它需要一个专门的适配器和专门的列表项布局。
 import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
@@ -40,8 +41,9 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
     @Override
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
         NoteRecord note = noteList.get(position);
+        //  将JSON字符串反序列化回NewsItem对象
         NewsItem newsItem = gson.fromJson(note.newsItemJson, NewsItem.class);
-
+        //  填充UI组件
         holder.titleTextView.setText(newsItem.getTitle());
         // 确保这里引用的 sourceTimeTextView 能在 ViewHolder 中被正确初始化
         holder.sourceTimeTextView.setText(String.format("%s %s", newsItem.getPublisher(), newsItem.getPublishTime()));
@@ -49,7 +51,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
         holder.updateTimeTextView.setText("更新于: " + sdf.format(new Date(note.updateTime)));
-
+        //设置点击事件
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, NewsDetailActivity.class);
             intent.putExtra("news_item", newsItem);

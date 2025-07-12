@@ -1,5 +1,6 @@
 package com.java.zhangzhiyuan.ui.category;
-
+//这个适配器用于CategoryManagementActivity中的两个RecyclerView
+//负责展示分类项目，并响应用户的拖拽操作。
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,20 +48,24 @@ public class CategoryManagementAdapter extends RecyclerView.Adapter<CategoryMana
 
     // 新增方法，用于处理拖拽排序后的数据交换
     public void onItemMove(int fromPosition, int toPosition) {
+        //如果是向下拖动
         if (fromPosition < toPosition) {
             for (int i = fromPosition; i < toPosition; i++) {
                 Collections.swap(categories, i, i + 1);
             }
         } else {
+            //如果是向下拖动
             for (int i = fromPosition; i > toPosition; i--) {
                 Collections.swap(categories, i, i - 1);
             }
         }
+        //通知RecyclerView项目已经移动
         notifyItemMoved(fromPosition, toPosition);
     }
 
     class CategoryViewHolder extends RecyclerView.ViewHolder {
         TextView textView;
+        //在ViewHolder中设置点击监听
         public CategoryViewHolder(@NonNull View itemView) {
             super(itemView);
             textView = itemView.findViewById(R.id.tv_category_name);

@@ -1,5 +1,5 @@
 package com.java.zhangzhiyuan.ui.home;
-
+//高级搜索对话框
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -44,11 +44,13 @@ public class AdvancedSearchDialogFragment extends DialogFragment {
 
     @Nullable
     @Override
+    //加载XML布局文件
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.dialog_advanced_search, container, false);
     }
 
     @Override
+    //进行UI组件初始化和设置监听器的最佳位置
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 

@@ -1,5 +1,6 @@
 package com.java.zhangzhiyuan.ui.category;
-
+//页面切换
+// 当ViewPager2需要显示一个新页面时，它会调用这个方法
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -50,6 +51,7 @@ public class CategoryPagerAdapter extends FragmentStateAdapter {
      */
     @Override
     public boolean containsItem(long itemId) {
+        //检查具有该ID的项是否仍然存在于数据集中
         for (Category category : categories) {
             if (category.hashCode() == itemId) {
                 return true;

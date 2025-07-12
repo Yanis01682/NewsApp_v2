@@ -77,7 +77,6 @@ public class NewsItem implements Serializable {
     }
 
 
-
     public String getVideo() {
         // 原始的getVideo逻辑保持不变
         Log.d(TAG, "获取到的原始视频URL (Raw Video URL): " + this.video);
@@ -85,23 +84,5 @@ public class NewsItem implements Serializable {
             return null;
         }
         return this.video.trim();
-    }
-
-    // =================================================================
-    // 3. 新增的、集中的日志打印方法
-    // =================================================================
-    /**
-     * 打印这条新闻的详细信息，方便调试。
-     * @param callerTag 调用方传入的TAG，用于在Logcat中区分日志来源。
-     */
-    public void logDetails(String callerTag) {
-        Log.d(callerTag, "----------------- 新闻日志 (由NewsItem生成) Start -----------------");
-        Log.d(callerTag, "标题: " + getTitle());
-        Log.d(callerTag, "未解析的图片URL: " + getRawImageUrls());
-        Log.d(callerTag, "解析后的图片URL: " + getImage());
-        Log.d(callerTag, "未解析的视频URL: " + this.video); // 直接访问原始字段
-        Log.d(callerTag, "解析后的视频URL: " + getVideo());
-        Log.d(callerTag, "正文: " + getContent());
-        Log.d(callerTag, "----------------- 新闻日志 End -------------------");
     }
 }

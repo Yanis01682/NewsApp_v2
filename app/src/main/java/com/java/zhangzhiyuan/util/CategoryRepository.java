@@ -30,6 +30,7 @@ public class CategoryRepository {
     );
 
     private final SharedPreferences sharedPreferences;
+    //用于在Java对象和JSON字符串之间进行转换。
     private final Gson gson = new Gson();
 
     public CategoryRepository(Context context) {
@@ -46,6 +47,7 @@ public class CategoryRepository {
         return gson.fromJson(json, type);
     }
 
+    //将用户最新的分类列表保存到本地。
     public void saveMyCategories(List<Category> myCategories) {
         String json = gson.toJson(myCategories);
         sharedPreferences.edit().putString(KEY_MY_CATEGORIES, json).apply();

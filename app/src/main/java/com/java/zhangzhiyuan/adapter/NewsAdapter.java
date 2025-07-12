@@ -1,5 +1,5 @@
 package com.java.zhangzhiyuan.adapter;
-
+//构建了item_news.xml的布局文件
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -47,6 +47,9 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     @NonNull
     @Override
+    //当RecyclerView需要创建一个新的列表项视图时，会调用此方法。
+    //如果viewType是VIEW_TYPE_ITEM，它就加载R.layout.item_news 并返回一个NewsViewHolder实例。
+    //否则，它就加载R.layout.item_loading 并返回一个LoadingViewHolder实例。
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == VIEW_TYPE_ITEM) {
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_news, parent, false);
@@ -61,6 +64,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof NewsViewHolder) {
             populateItemRows((NewsViewHolder) holder, position);
+            //设置标题和来源时间
         }
     }
 
@@ -82,7 +86,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         NewsItem news = newsList.get(position);
         if (news == null) return;
 
-        // --- 1. 文本和点击事件的逻辑保持不变 ---
+
         holder.titleTextView.setText(news.getTitle());
         holder.publisherTextView.setText(String.format("%s %s", news.getPublisher(), news.getPublishTime()));
         holder.itemView.setOnClickListener(v -> {
@@ -96,21 +100,21 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             holder.titleTextView.setTextColor(Color.BLACK);
         }
 
-        // --- 2. 【终极版】图片处理逻辑 ---
+        // 图片处理逻辑
         final String imageUrl = news.getImage();
 
         // 分支 A: 如果这个新闻【没有】图片URL
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
-            // 【关键步骤 1】: 强制取消之前可能在这个ImageView上进行的任何Glide加载任务。
+            // 强制取消之前可能在这个ImageView上进行的任何Glide加载任务。
             Glide.with(context).clear(holder.imageView);
-            // 【关键步骤 2】: 将ImageView彻底隐藏，并且不占用任何布局空间。
+            // 将ImageView彻底隐藏，并且不占用任何布局空间。
             holder.imageView.setVisibility(View.GONE);
         }
         // 分支 B: 如果这个新闻【有】图片URL
         else {
-            // 【关键步骤 3】: 先让ImageView在布局中可见，准备好承载新图片。
+            // 先让ImageView在布局中可见，准备好承载新图片。
             holder.imageView.setVisibility(View.VISIBLE);
-            // 【关键步骤 4】: 使用Glide加载新图片。
+            // 使用Glide加载新图片。
             Glide.with(context)
                     .load(imageUrl)
                     // 让Glide来管理占位图，它会在开始加载时显示

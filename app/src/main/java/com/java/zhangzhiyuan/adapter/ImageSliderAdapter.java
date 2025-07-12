@@ -1,5 +1,5 @@
 package com.java.zhangzhiyuan.adapter;
-
+//负责将一个包含图片URL字符串的列表转换成用户可以左右滑动的图片。
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,6 +38,7 @@ public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.
     @NonNull
     @Override
     public SliderViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        // 加载 item_image_slider.xml 布局，它内部只有一个ImageView
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_image_slider, parent, false);
         return new SliderViewHolder(view);
     }
@@ -45,15 +46,16 @@ public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.
     @Override
     public void onBindViewHolder(@NonNull SliderViewHolder holder, int position) {
         String imageUrl = imageUrls.get(position);
+        // 使用Glide加载图片
         Glide.with(holder.itemView.getContext())
                 .load(imageUrl)
                 .placeholder(R.drawable.placeholder_image_background)
                 .listener(new RequestListener<Drawable>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                        // 2. 追踪失败数量
+                        // 1. 追踪失败数量
                         failedImageCount++;
-                        // 3. 检查是否所有图片都已失败
+                        // 2. 检查是否所有图片都已失败
                         if (failedImageCount == getItemCount() && allImagesFailedListener != null) {
                             allImagesFailedListener.onAllImagesFailed();
                         }

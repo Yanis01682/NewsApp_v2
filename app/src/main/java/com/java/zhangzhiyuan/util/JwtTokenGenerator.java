@@ -1,5 +1,5 @@
 package com.java.zhangzhiyuan.util;
-
+//智谱AI V4的JWT Token生成器。
 import android.util.Base64;
 import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
@@ -58,6 +58,7 @@ public class JwtTokenGenerator {
             String encodedSignature = Base64.encodeToString(signatureBytes, flags);
 
             // 7. 拼接成最终的JWT
+            //格式为：EncodedHeader.EncodedPayload.EncodedSignature
             return signingInput + "." + encodedSignature;
 
         } catch (Exception e) {

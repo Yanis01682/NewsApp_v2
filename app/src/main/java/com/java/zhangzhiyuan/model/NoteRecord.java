@@ -1,5 +1,5 @@
 package com.java.zhangzhiyuan.model;
-
+//存储笔记
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;

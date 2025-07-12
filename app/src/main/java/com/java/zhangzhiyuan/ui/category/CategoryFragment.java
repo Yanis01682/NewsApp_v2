@@ -26,16 +26,18 @@ import java.util.List;
 
 public class CategoryFragment extends Fragment {
 
+    //顶部的tab
     private TabLayout tabLayout;
+    //下方的内容去
     private ViewPager2 viewPager;
     private ImageView ivCategoryManage;
     private CategoryPagerAdapter pagerAdapter;
     private List<Category> myCategories;
     private CategoryRepository categoryRepository;
-    private TabLayoutMediator tabLayoutMediator; // 将Mediator提升为成员变量，方便管理
-    private CategoryViewModel categoryViewModel; // <--- 1. 在顶部声明
+    private TabLayoutMediator tabLayoutMediator;
+    private CategoryViewModel categoryViewModel;
 
-    // --- 终极武器：一个标志位，用于判断是否是第一次加载 ---
+    // 一个标志位，用于判断是否是第一次加载
     private boolean isInitialDataLoaded = false;
 
 
@@ -51,9 +53,10 @@ public class CategoryFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //初始化数据仓库
         categoryRepository = new CategoryRepository(requireContext());
 
-        // vvv--- 2. 在这里初始化ViewModel ---vvv
+        // 初始化用于通信的ViewModel
         // 通过这种方式获取的ViewModel，可以被所有子Fragment共享
         categoryViewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
     }
@@ -61,7 +64,9 @@ public class CategoryFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        //加载布局文件
         View view = inflater.inflate(R.layout.fragment_category, container, false);
+        //初始化ui组件
         initViews(view);
         // onCreateView只负责创建视图，不加载任何数据
         return view;
@@ -70,7 +75,7 @@ public class CategoryFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // --- 终极解决方案：在页面可见时，才决定是否加载数据 ---
+        // 在页面可见时，才决定是否加载数据
         if (!isInitialDataLoaded) {
             // 如果是第一次进入该页面，则开始加载分类数据
             loadCategoriesAndSetupUI();
@@ -101,11 +106,9 @@ public class CategoryFragment extends Fragment {
         viewPager.setAdapter(pagerAdapter);
 
         // --- 核心修正：将TabLayoutMediator的创建和附加逻辑也封装起来 ---
-        // vvv--- 在这里添加核心修复代码 ---vvv
         // 设置页面缓存数量。我们把它设置成一个稍大的值（比如10），
         // 这样在您滑动分类时，绝大部分页面都会被保留在内存中，不会被销毁和重建。
         viewPager.setOffscreenPageLimit(10);
-        // ^^^--- 添加结束 ---^^^
 
         attachTabs();
     }
@@ -133,10 +136,6 @@ public class CategoryFragment extends Fragment {
         });
     }
 
-    /**
-     * --- 核心修正：这是最关键的修改 ---
-     * 刷新分类和UI的完整逻辑
-     */
     private void reloadCategoriesAndRefreshUI() {
         // 记录当前选中的tab位置，以便刷新后恢复
         int currentPosition = tabLayout.getSelectedTabPosition();
@@ -159,7 +158,6 @@ public class CategoryFragment extends Fragment {
         }
     }
 
-    // vvv--- 添加这个新方法 ---vvv
     public void refreshCurrentList() {
         // 确保UI组件都已准备好
         if (tabLayout != null && myCategories != null && !myCategories.isEmpty()) {
@@ -174,5 +172,4 @@ public class CategoryFragment extends Fragment {
             }
         }
     }
-// ^^^--- 添加结束 ---^^^
 }

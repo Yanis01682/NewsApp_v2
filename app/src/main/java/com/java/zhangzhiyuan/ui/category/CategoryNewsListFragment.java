@@ -1,5 +1,5 @@
 package com.java.zhangzhiyuan.ui.category;
-
+//单个分类的新闻展板
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -44,14 +44,13 @@ public class CategoryNewsListFragment extends Fragment {
     private NewsAdapter newsAdapter;
     private List<NewsItem> newsList = new ArrayList<>();
     private String categoryValue;
-    private CategoryViewModel categoryViewModel; // <--- 1. 在顶部声明
+    private CategoryViewModel categoryViewModel;
 
     private int currentPage = 1;
     private boolean isLoading = false;
-    // 核心修正：修改页面大小为20
     private final int PAGE_SIZE = 20;
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
-    private TextView emptyViewText; // <--- 在类顶部声明
+    private TextView emptyViewText;
     private static final long MIN_REFRESH_DURATION = 500; // 最小刷新动画时长(毫秒)
     private long refreshStartTime = 0;
 
@@ -69,6 +68,7 @@ public class CategoryNewsListFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
+            //在创建时取出自己的分类名
             categoryValue = getArguments().getString(ARG_CATEGORY);
         }
     }
@@ -94,7 +94,6 @@ public class CategoryNewsListFragment extends Fragment {
         swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout);
         recyclerView = view.findViewById(R.id.recycler_view_news);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        // 核心修正：使用正确的构造函数
         newsAdapter = new NewsAdapter(getContext(), newsList);
         recyclerView.setAdapter(newsAdapter);
     }
@@ -113,14 +112,13 @@ public class CategoryNewsListFragment extends Fragment {
             }
         });
     }
-    // vvv--- 添加这个新方法 ---vvv
     public void scrollToTopAndRefresh() {
         // 确保视图组件都已存在
         if (recyclerView == null || swipeRefreshLayout == null) {
             return;
         }
 
-        // vvv--- 使用正确的变量 categoryValue 来显示提示 ---vvv
+        // 使用正确的变量 categoryValue 来显示提示
         // 如果您点击分类Tab后看到了这个提示，说明指令已经成功传递到这里了
         //Toast.makeText(getContext(), categoryValue + " 刷新中...", Toast.LENGTH_SHORT).show();
         // ^^^--- 调试代码结束 ---^^^
@@ -132,12 +130,11 @@ public class CategoryNewsListFragment extends Fragment {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (swipeRefreshLayout != null) {
                 swipeRefreshLayout.setRefreshing(true);
-                // 调用您已有的、真正开始网络请求的方法
+                // 调用已有的、真正开始网络请求的方法
                 startRefresh();
             }
         }, 100);
     }
-// ^^^--- 添加结束 ---^^^
 
     private void startRefresh() {
         if (isLoading) {
@@ -172,7 +169,6 @@ public class CategoryNewsListFragment extends Fragment {
         ApiService apiService = RetrofitClient.getApiService();
         String size = String.valueOf(PAGE_SIZE);
         String page = String.valueOf(currentPage);
-        // 核心修正：确保endDate总是当前时间
         String endDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
         String startDate = "2006-01-01";;
 
@@ -188,7 +184,6 @@ public class CategoryNewsListFragment extends Fragment {
             }
         });
     }
-    // vvv--- 添加这个新的UI更新方法 ---vvv
     private void updateUIVisibility() {
         if (recyclerView == null || emptyViewText == null) return;
         if (newsList.isEmpty()) {
@@ -199,7 +194,6 @@ public class CategoryNewsListFragment extends Fragment {
             emptyViewText.setVisibility(View.GONE);
         }
     }
-    // ^^^--- 添加结束 ---^^^
 
     private void handleResponse(Response<NewsResponse> response, boolean isRefresh) {
         if (newsAdapter == null) return;

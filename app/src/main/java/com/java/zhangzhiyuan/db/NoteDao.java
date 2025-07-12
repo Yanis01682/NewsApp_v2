@@ -1,5 +1,5 @@
 package com.java.zhangzhiyuan.db;
-
+//结构相同于FavoriteDao
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;

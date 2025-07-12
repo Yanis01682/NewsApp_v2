@@ -63,7 +63,7 @@ public class NewsDetailActivity extends AppCompatActivity {
 
     private static final String TAG = "NewsDetailActivity";
     private static final String API_KEY = "805c28b7b77747a88617bfb68e53aca8.FJK3H1Frt1nhGVvR";
-
+    //视图绑定对象，用于访问 activity_news_detail.xml 中的所有UI组件。
     private ActivityNewsDetailBinding binding;
 
     private ExoPlayer player;
@@ -105,15 +105,18 @@ public class NewsDetailActivity extends AppCompatActivity {
 //            if (this.currentVideoUrl != null && !this.currentVideoUrl.isEmpty()) {
 //                this.currentVideoUrl = "http://vjs.zencdn.net/v/oceans.mp4";
 //            }
+
             loadSummary(newsItem.getNewsID(), newsItem.getContent());
             recordHistory(newsItem);
+            //将这条新闻记录到用户的浏览历史中。
             checkIfFavorited(newsItem.getNewsID());
             setupNoteFeature();
         }
     }
-
+    //处理顶部菜单
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        //: 加载menu_news_detail.xml 文件，将其中的菜单项“渲染”到menu对象中。
         getMenuInflater().inflate(R.menu.menu_news_detail, menu);
         for (int i = 0; i < menu.size(); i++) {
             MenuItem menuItem = menu.getItem(i);
@@ -123,17 +126,20 @@ public class NewsDetailActivity extends AppCompatActivity {
                 DrawableCompat.setTint(drawable, ContextCompat.getColor(this, R.color.black));
             }
         }
+        //显示空心或者实心收藏
         updateFavoriteIcon(menu.findItem(R.id.action_favorite));
         return true;
     }
-
+    //获取被点击菜单项的id
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int itemId = item.getItemId();
+        //如果是返回按钮
         if (itemId == android.R.id.home) {
-            finish();
+            finish();//关闭当前activity
             return true;
         } else if (itemId == R.id.action_note) {
+            //显示或隐藏笔记框
             toggleNoteArea();
             return true;
         } else if (itemId == R.id.action_favorite) {
@@ -148,12 +154,14 @@ public class NewsDetailActivity extends AppCompatActivity {
 
     private void shareNews() {
         if (currentNewsItem == null) return;
+        //创建一个用于“发送”数据的Intent。ACTION_SEND是安卓系统内置的一个标准动作。
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("text/plain");
         String summaryText = binding.newsDetailSummary.getText().toString();
         String shareBody = "【来自SkyNews的分享】\n标题：" + currentNewsItem.getTitle() + "\n\n摘要：" + summaryText;
         shareIntent.putExtra(Intent.EXTRA_SUBJECT, "分享新闻：" + currentNewsItem.getTitle());
         shareIntent.putExtra(Intent.EXTRA_TEXT, shareBody);
+        //启动一个系统选择器
         startActivity(Intent.createChooser(shareIntent, "分享到"));
     }
 
@@ -161,7 +169,9 @@ public class NewsDetailActivity extends AppCompatActivity {
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            //不显示默认的标题
             getSupportActionBar().setDisplayShowTitleEnabled(false);
+            //获取返回箭头的图标资源
             final Drawable upArrow = ContextCompat.getDrawable(this, R.drawable.ic_baseline_arrow_back_24);
             if (upArrow != null) {
                 upArrow.setColorFilter(ContextCompat.getColor(this, R.color.black), android.graphics.PorterDuff.Mode.SRC_ATOP);
@@ -169,7 +179,7 @@ public class NewsDetailActivity extends AppCompatActivity {
             }
         }
     }
-
+    //将NewsItem对象中的文本数据填充到对应的UI组件中。
     private void populateViews(NewsItem newsItem) {
         binding.newsDetailTitle.setText(newsItem.getTitle());
         binding.newsDetailSource.setText(newsItem.getPublisher());
@@ -177,8 +187,10 @@ public class NewsDetailActivity extends AppCompatActivity {
 
         String originalContent = newsItem.getContent();
         if (originalContent != null && !originalContent.isEmpty()) {
+            //处理换行
             String[] paragraphs = originalContent.split("\\r?\\n");
             StringBuilder formattedContent = new StringBuilder();
+            // 遍历每一个段落
             for (String paragraph : paragraphs) {
                 String trimmedParagraph = paragraph.trim();
                 if (!trimmedParagraph.isEmpty()) {
@@ -358,10 +370,11 @@ public class NewsDetailActivity extends AppCompatActivity {
     }
 
 
-    // ... (rest of the file remains the same)
+    //当用户点进详情页时，这个方法会立即将这条新闻记入浏览历史
     private void recordHistory(NewsItem newsItem) {
         executorService.execute(() -> {
             if (newsItem.getUrl() == null) return; // 如果URL为空，则不记录
+            //使用gson库将整个NewsItem对象转换成一个JSON格式的字符串
             String newsItemJson = gson.toJson(newsItem);
             // 使用 URL 作为主键来记录历史
             HistoryRecord record = new HistoryRecord(newsItem.getUrl(), newsItemJson, System.currentTimeMillis());
@@ -526,7 +539,9 @@ public class NewsDetailActivity extends AppCompatActivity {
 
     private void fetchSummaryFromGlmApi(final String content, final SummaryCallback callback) {
         String token = JwtTokenGenerator.generateToken(API_KEY, 3600 * 1000);
+        //1. 构造ChatMessage，包含角色和我们给AI的指令
         ZhipuRequest.ChatMessage message = new ZhipuRequest.ChatMessage("user", "请为以下新闻内容生成一段100到150字左右的摘要，请直接返回摘要内容，不要包含“好的”、“当然”等多余的词语：\n\n" + content);
+        //2. 构造ZhipuRequest，指定模型和对话内容
         ZhipuRequest requestBody = new ZhipuRequest("glm-4", Collections.singletonList(message));
         RetrofitClient.getApiService().getChatSummary("Bearer " + token, requestBody).enqueue(new Callback<ZhipuResponse>() {
             @Override

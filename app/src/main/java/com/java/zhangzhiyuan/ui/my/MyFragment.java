@@ -1,5 +1,5 @@
 package com.java.zhangzhiyuan.ui.my;
-
+//实现了一个简单的入口导航
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -16,7 +16,7 @@ public class MyFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        // ViewModel的初始化是标准流程，保留即可
+        // ViewModel的初始化是标准流程
         MyViewModel myViewModel =
                 new ViewModelProvider(this).get(MyViewModel.class);
 
@@ -28,7 +28,7 @@ public class MyFragment extends Fragment {
 
         return root;
     }
-
+    //为布局中的三个LinearLayout（历史记录、我的收藏、我的笔记）设置了点击监听器。
     private void setupListeners() {
         // 核心修正：将点击事件绑定到整个LinearLayout上，而不是不存在的TextView
         binding.layoutHistory.setOnClickListener(v -> {
